@@ -1,0 +1,79 @@
+inspired by claude
+
++------------------------------------------+
+|               Application                |
+|  (Developer's Solana Program using CCIHS)|
++------------------+---------------------+
+                   |
+                   v
++------------------------------------------+
+|             CCIHS API Layer              |
+|   (send_message, receive_message, etc.)  |
++------------------+---------------------+
+                   |
+                   v
++------------------------------------------+
+|              Hook Layer                  |
+| +----------------+  +------------------+ |
+| | PreDispatch    |  | PostDispatch     | |
+| +----------------+  +------------------+ |
+| | PreExecution   |  | PostExecution    | |
+| +----------------+  +------------------+ |
++------------------+---------------------+
+                   |
+                   v
++------------------------------------------+
+|           Protocol Adapter Layer         |
+| +----------------+  +------------------+ |
+| | Wormhole       |  | LayerZero        | |
+| | Adapter        |  | Adapter          | |
+| +----------------+  +------------------+ |
+| | Future         |  | Custom Protocol  | |
+| | Adapters...    |  | Adapter          | |
+| +----------------+  +------------------+ |
++------------------+---------------------+
+                   |
+                   v
++------------------------------------------+
+|              Core Layer                  |
+|  (Message structures, Chain IDs, etc.)   |
++------------------+---------------------+
+                   |
+                   v
++------------------------------------------+
+|            Utility Layer                 |
+|   (Error handling, Serialization, etc.)  |
++------------------------------------------+
+           |               |
+           v               v
++------------------+ +------------------+
+|     Wormhole     | |    LayerZero     |
+|     Network      | |     Network      |
++------------------+ +------------------+
+    |         |         |         |
+    v         v         v         v
++------+ +------+   +------+ +------+
+| ETH  | | BSC  |   | AVAX | | Other|
++------+ +------+   +------+ +------+
+
+
+This diagram illustrates:
+
+1. The Application layer, where developers interact with CCIHS.
+2. The API Layer, which provides a unified interface for cross-chain operations.
+3. The Hook Layer, allowing custom logic injection at various points.
+4. The Protocol Adapter Layer, which includes multiple adapters for different cross-chain protocols. 
+   This layer abstracts the differences between protocols.
+5. The Core Layer, containing fundamental structures and interfaces used across the system.
+6. The Utility Layer, providing supporting functionalities.
+7. The external networks (Wormhole, LayerZero) and their supported chains.
+
+Key points about this architecture:
+
+1. It's extensible: New protocol adapters can be added without changing the upper layers.
+2. It's flexible: The hook system allows customization without modifying core logic.
+3. It provides a consistent interface: Developers interact with a single API regardless of the underlying protocol.
+4. It separates concerns: Each layer has a specific responsibility, making the system easier to maintain and update.
+
+This architecture allows CCIHS to support multiple cross-chain protocols while providing a unified, Solana-optimized interface for developers. 
+As new cross-chain protocols emerge or gain popularity, new adapters can be added to the Protocol Adapter Layer without significant changes to the rest of the system.

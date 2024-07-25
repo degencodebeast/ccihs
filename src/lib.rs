@@ -3,18 +3,15 @@ pub mod protocol;
 pub mod api;
 pub mod hook;
 pub mod utility;
+pub mod types;
 
-// pub fn add(left: usize, right: usize) -> usize {
-//     left + right
-// }
+pub use utility::{CCIHSError};
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn it_works() {
-//         let result = add(2, 2);
-//         assert_eq!(result, 4);
-//     }
-// }
+pub use types::{
+    ChainId, 
+    CrossChainMessage, 
+    CrossChainTransaction, 
+    MessageStatus,
+    CCIHSResult,
+    CrossChainResult,
+};
