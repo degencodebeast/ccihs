@@ -4,6 +4,7 @@ pub mod api;
 pub mod hook;
 pub mod utility;
 pub mod types;
+pub mod state;
 
 pub use utility::{CCIHSError};
 
@@ -15,3 +16,5 @@ pub use types::{
     CCIHSResult,
     CrossChainResult,
 };
+
+pub use state::*;

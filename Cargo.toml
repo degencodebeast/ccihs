@@ -5,6 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+anchor = ["dep:anchor-lang"]
+
 [dependencies]
-solana-program = "1.14"
+anchor-lang = { version = "0.28.0", optional = true }
+solana-program = "1.16"
+borsh = "0.10.3"
 thiserror = "1.0"
