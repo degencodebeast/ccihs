@@ -4,6 +4,8 @@
 
 CCIHS is a developer toolkit designed to simplify the process of building cross-chain applications on Solana. It provides a unified, Solana-optimized API for interacting with cross-chain protocols, initially focusing on Wormhole integration.
 
+The key benefit of CCIHS is that it abstracts away much of the complexity of interacting with the cross-chain protocol on the Solana side, making it easier for developers to implement these cross-chain interactions.
+
 ## Features
 
 - Unified API for cross-chain operations on Solana
