@@ -2,9 +2,14 @@
 
 use thiserror::Error;
 use solana_program::program_error::ProgramError;
+use crate::core::error::CoreError;
 
 #[derive(Debug, Error, Clone)]
 pub enum CCIHSError {
+
+    #[error("Core error: {0}")]
+    Core(#[from] CoreError),
+
     #[error("Invalid chain ID")]
     InvalidChainId,
 

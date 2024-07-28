@@ -1,4 +1,4 @@
-use super::chain::ChainId;
+use super::{chain::ChainId, CCIHSResult};
 use solana_program::pubkey::Pubkey;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,6 +20,35 @@ pub enum MessageStatus {
     Executed,
     Failed,
 }
+
+impl CrossChainMessage {
+    pub fn new(
+        source_chain: ChainId,
+        destination_chain: ChainId,
+        sender: Pubkey,
+        recipient: Vec<u8>,
+        payload: Vec<u8>,
+    ) -> Self {
+        Self {
+            source_chain,
+            destination_chain,
+            sender,
+            recipient,
+            payload,
+            nonce: 0, // This should be generated
+            timestamp: 0, // This should be set to current time
+        }
+    }
+
+    pub fn validate(&self) -> CCIHSResult<()> {
+        // Implement validation logic
+        // e.g., check payload size, validate chains, etc.
+        Ok(())
+    }
+
+    // Add other methods as needed
+}
+    
 
 #[derive(Debug, Clone)]
 pub struct CrossChainTransaction {
