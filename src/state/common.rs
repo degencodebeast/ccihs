@@ -38,5 +38,3 @@ pub fn derive_state_address(program_id: &Pubkey, sender: &Pubkey) -> (Pubkey, u8
 // - Store timestamps of the last message interactions
 
 // This approach allows CCIHS to remain flexible and usable in various contexts while providing developers with the necessary tools to manage cross-chain state effectively in their Solana programs.
-
-// Given this clarification, do you think the current implementation of the `state` folder aligns with your vision for CCIHS, or would you like to modify its purpose or contents?

@@ -6,7 +6,8 @@ pub mod utility;
 pub mod types;
 pub mod state;
 
-pub use utility::{CCIHSError};
+
+pub use utility::{CCIHSError, serialization};
 
 pub use types::{
     ChainId, 

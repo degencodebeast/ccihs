@@ -1,7 +1,18 @@
 use super::{chain::ChainId, CCIHSResult};
 use solana_program::pubkey::Pubkey;
 
-#[derive(Debug, Clone, PartialEq)]
+
+#[cfg(not(feature = "anchor"))]
+use borsh::{BorshSerialize, BorshDeserialize};
+
+#[cfg(feature = "anchor")]
+use anchor_lang::prelude::*;
+
+
+#[cfg_attr(not(feature = "anchor"), derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
+#[derive(Clone, Debug, PartialEq)]
+//#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct CrossChainMessage {
     pub source_chain: ChainId,
     pub destination_chain: ChainId,
@@ -12,7 +23,10 @@ pub struct CrossChainMessage {
     pub timestamp: u64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(not(feature = "anchor"), derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
+#[derive(Clone, Debug, PartialEq)]
+//#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub enum MessageStatus {
     Pending,
     Sent,
@@ -50,7 +64,10 @@ impl CrossChainMessage {
 }
     
 
-#[derive(Debug, Clone)]
+#[cfg_attr(not(feature = "anchor"), derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
+#[derive(Clone, Debug, PartialEq)]
+//#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct CrossChainTransaction {
     pub message: CrossChainMessage,
     pub status: MessageStatus,

@@ -12,5 +12,8 @@ anchor = ["dep:anchor-lang"]
 [dependencies]
 anchor-lang = { version = "0.28.0", optional = true }
 solana-program = "1.16"
-borsh = "0.10.3"
+ethereum-types = "0.14.1"
+#solana-program = "1.14"
+borsh = "0.10.0"
+#borsh = "0.9.3"
 thiserror = "1.0"
