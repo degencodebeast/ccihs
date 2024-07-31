@@ -84,6 +84,3 @@ Test Cross-Chain Operations: Rigorously test the cross-chain operations between 
 Documentation and Examples: Provide comprehensive documentation and example projects to help developers understand how to use CCIHS for interacting with different blockchains via various transport networks.
 
 By incorporating multiple transport networks like Wormhole and LayerZero, CCIHS can offer more flexibility and interoperability, making it easier for developers to build robust cross-chain applications on Solana.---
-
-
-inpsired by 4o

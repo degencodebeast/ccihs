@@ -1,5 +1,3 @@
-inspired by claude
-
 +------------------------------------------+
 |               Application                |
 |  (Developer's Solana Program using CCIHS)|

@@ -5,9 +5,9 @@ mod anchor;
 #[cfg(feature = "anchor")]
 pub use self::anchor::*;
 
-#[cfg(not(feature = "anchor"))]
+#[cfg(feature = "native")]
 mod native;
-#[cfg(not(feature = "anchor"))]
+#[cfg(feature = "native")]
 pub use self::native::*;
 
 

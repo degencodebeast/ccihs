@@ -7,9 +7,8 @@ use anchor_lang::prelude::*;
 use borsh::{BorshSerialize, BorshDeserialize};
 
 
-
+#[cfg_attr(feature = "native", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
-#[cfg_attr(not(feature = "anchor"), derive(BorshSerialize, BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq)]
 //#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct CrossChainFee {

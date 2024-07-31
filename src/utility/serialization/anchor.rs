@@ -1,5 +1,5 @@
 // src/utility/serialization/anchor.rs
-
+use std::io::Read;
 use anchor_lang::prelude::*;
 use solana_program::pubkey::Pubkey;
 use crate::types::{
@@ -23,6 +23,11 @@ impl AnchorSerialize for ChainId {
 impl AnchorDeserialize for ChainId {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
         let id = u16::deserialize(buf)?;
+        Ok(ChainId(id))
+    }
+
+    fn deserialize_reader<R: Read>(reader: &mut R) -> std::io::Result<Self> {
+        let id = u16::deserialize_reader(reader)?;
         Ok(ChainId(id))
     }
 }
@@ -57,41 +62,21 @@ impl AnchorDeserialize for CrossChainAddress {
             _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid CrossChainAddress variant")),
         }
     }
+
+    fn deserialize_reader<R: Read>(reader: &mut R) -> std::io::Result<Self> {
+        let mut variant = [0u8; 1];
+        reader.read_exact(&mut variant)?;
+        match variant[0] {
+            0 => Ok(CrossChainAddress::Solana(Pubkey::deserialize_reader(reader)?)),
+            1 => {
+                let mut eth_addr = [0u8; 20];
+                reader.read_exact(&mut eth_addr)?;
+                Ok(CrossChainAddress::Ethereum(eth_addr))
+            },
+            _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid CrossChainAddress variant")),
+        }
+    }
 }
-
-// // Derive AnchorSerialize and AnchorDeserialize for other types
-// #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
-// pub struct CrossChainMessage {
-//     pub source_chain: ChainId,
-//     pub destination_chain: ChainId,
-//     pub sender: Pubkey,
-//     pub recipient: Vec<u8>,
-//     pub payload: Vec<u8>,
-//     pub nonce: u64,
-//     pub timestamp: i64,
-// }
-
-// #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
-// pub enum MessageStatus {
-//     Pending,
-//     Sent,
-//     Delivered,
-//     Executed,
-//     Failed,
-// }
-
-// #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
-// pub struct CrossChainTransaction {
-//     pub message: CrossChainMessage,
-//     pub status: MessageStatus,
-//     pub transaction_hash: Option<[u8; 32]>,
-// }
-
-// #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
-// pub struct CrossChainFee {
-//     pub amount: u64,
-//     pub token: Option<Pubkey>,
-// }
 
 // Helper functions for serialization and deserialization
 pub fn serialize<T: AnchorSerialize>(value: &T) -> CCIHSResult<Vec<u8>> {
