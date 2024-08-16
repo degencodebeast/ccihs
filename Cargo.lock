@@ -700,6 +700,7 @@ dependencies = [
  "ethereum-types",
  "solana-program 1.16.25",
  "thiserror",
+ "wormhole-core-bridge-solana",
  "wormhole-sdk",
  "wormhole-token-bridge-solana",
 ]
