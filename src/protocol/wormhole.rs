@@ -64,7 +64,7 @@ impl WormholeAdapter {
         message: &CrossChainMessage,
     ) -> Result<()> {
         // Execute pre-dispatch hooks
-        self.hook_manager.execute_hooks(HookType::PreDispatch, message)?;
+        self.hook_manager.execute_hooks(HookType::PreDispatch, &mut message)?;
 
         let payload = self.serialize_message(message)?;
         
@@ -152,7 +152,7 @@ impl WormholeAdapter {
         )?;
 
         // Execute post-dispatch hooks
-        self.hook_manager.execute_hooks(HookType::PostDispatch, message)?;
+        self.hook_manager.execute_hooks(HookType::PostDispatch, &mut message)?;
 
         Ok(())
     }
@@ -188,7 +188,7 @@ impl WormholeAdapter {
         let message = self.deserialize_message(&payload)?;
 
         // Execute pre-execution hooks
-        self.hook_manager.execute_hooks(HookType::PreExecution, &message)?;
+        self.hook_manager.execute_hooks(HookType::PreExecution, &mut message)?;
 
         // Complete token transfer
         let complete_transfer_ix = token_bridge_instruction::complete_transfer_native(
@@ -224,7 +224,7 @@ impl WormholeAdapter {
         )?;
 
         // Execute post-execution hooks
-        self.hook_manager.execute_hooks(HookType::PostExecution, &message)?;
+        self.hook_manager.execute_hooks(HookType::PostExecution, &mut message)?;
 
         Ok(message)
     }
