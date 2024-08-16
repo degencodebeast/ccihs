@@ -50,7 +50,10 @@ impl CrossChainMessage {
             recipient,
             payload,
             nonce: 0, // This should be generated
-            timestamp: 0, // This should be set to current time
+            timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
         }
     }
 
