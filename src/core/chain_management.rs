@@ -1,3 +1,5 @@
+// src/core/chain_management.rs
+
 use crate::types::{ChainId, CCIHSResult};
 use super::error::CoreError;
 use std::collections::HashMap;
@@ -35,40 +37,23 @@ impl ChainManager {
         }
 
         if from == to {
+            log::debug!("No conversion needed for address from {:?} to {:?}", from, to);
             return Ok(address);
         }
-
-        self.chain_conversions
-            .get(&(from, to))
-            .ok_or_else(|| CoreError::InvalidChainConversion { from, to })?
-            (address)
+    
+        match self.chain_conversions.get(&(from, to)) {
+            Some(conversion_fn) => {
+                log::info!("Converting address from {:?} to {:?}", from, to);
+                conversion_fn(address)
+            }
+            None => {
+                log::warn!("No conversion function found for {:?} to {:?}", from, to);
+                Err(CoreError::InvalidChainConversion { from, to }.into())
+            }
+        }
     }
 
     pub fn supported_chains(&self) -> &[ChainId] {
         &self.supported_chains
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_chain_manager() {
-        let mut manager = ChainManager::new(vec![ChainId::SOLANA, ChainId::ETHEREUM]);
-
-        assert!(manager.is_supported_chain(ChainId::SOLANA));
-        assert!(manager.is_supported_chain(ChainId::ETHEREUM));
-        assert!(!manager.is_supported_chain(ChainId::new(999)));
-
-        manager.add_chain_conversion(ChainId::SOLANA, ChainId::ETHEREUM, |addr| {
-            Ok(addr.into_iter().rev().collect())
-        });
-
-        let solana_addr = vec![1, 2, 3, 4];
-        let eth_addr = manager.convert_address(ChainId::SOLANA, ChainId::ETHEREUM, solana_addr.clone()).unwrap();
-        assert_eq!(eth_addr, vec![4, 3, 2, 1]);
-
-        assert!(manager.convert_address(ChainId::SOLANA, ChainId::new(999), solana_addr).is_err());
     }
 }

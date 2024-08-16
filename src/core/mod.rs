@@ -1,12 +1,14 @@
-pub mod operation;
-pub mod chain_management;
-pub mod error;
+// src/core/mod.rs
 
-pub use operation::*;
-pub use chain_management::*;
+mod operation;
+mod chain_management;
+mod error;
+
+pub use operation::CCIHSCore;
+pub use chain_management::ChainManager;
 pub use error::CoreError;
 
-// The core folder in CCIHS is meant to contain the central, fundamental logic of the library. Let's review its purpose and what might be needed to complete it:
+// The core folder in CCIHS is meant to contain the central, fundamental logic of the library
 // Purpose of the core folder:
 
 // 1. Define the main operational logic of CCIHS.

@@ -1,3 +1,5 @@
+// src/core/error.rs
+
 use thiserror::Error;
 use crate::types::ChainId;
 
