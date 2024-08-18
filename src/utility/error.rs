@@ -40,5 +40,8 @@ pub enum CCIHSError {
     #[error("Solana program error: {0}")]
     SolanaProgramError(#[from] ProgramError),
 
+    #[error("Protocol not configured: {0}")]
+    ProtocolNotConfigured(String),
+
     // Add more error types as needed
 }

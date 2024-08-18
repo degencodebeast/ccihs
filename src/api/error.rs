@@ -13,6 +13,9 @@ pub enum APIError {
 
     #[error("Unsupported operation: {0}")]
     UnsupportedOperation(String),
+
+    #[error("Configuration error: {0}")]
+    ConfigurationError(String),
 }
 
 impl From<CCIHSError> for APIError {

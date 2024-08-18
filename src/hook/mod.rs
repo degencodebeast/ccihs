@@ -26,3 +26,8 @@ pub enum HookType {
 pub trait Hook: Send + Sync {
     fn execute(&self, message: &mut CrossChainMessage, source_chain: ChainId, destination_chain: ChainId) -> CCIHSResult<()>;
 }
+
+// #[async_trait]
+// pub trait Hook: Send + Sync {
+//     async fn execute(&self, message: &mut CrossChainMessage) -> CCIHSResult<()>;
+// }

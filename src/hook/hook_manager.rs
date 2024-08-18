@@ -11,35 +11,69 @@ pub struct HookManager {
 
 impl HookManager {
     pub fn new() -> Self {
-        let mut hooks = HashMap::new();
-        hooks.insert(HookType::PreDispatch, vec![Box::new(PreDispatchHook)]);
-        hooks.insert(HookType::PostDispatch, vec![Box::new(PostDispatchHook)]);
-        hooks.insert(HookType::PreExecution, vec![Box::new(PreExecutionHook)]);
-        hooks.insert(HookType::PostExecution, vec![Box::new(PostExecutionHook)]);
-        Self { hooks }
+        // let mut hooks = HashMap::new();
+        // hooks.insert(HookType::PreDispatch, vec![Box::new(PreDispatchHook)]);
+        // hooks.insert(HookType::PostDispatch, vec![Box::new(PostDispatchHook)]);
+        // hooks.insert(HookType::PreExecution, vec![Box::new(PreExecutionHook)]);
+        // hooks.insert(HookType::PostExecution, vec![Box::new(PostExecutionHook)]);
+        // Self { hooks }
+
+        Self {
+            hooks: HashMap::new(),
+        }
     }
 
     pub fn add_hook(&mut self, hook_type: HookType, hook: Box<dyn Hook>) {
         self.hooks.entry(hook_type).or_default().push(hook);
     }
 
+    // pub fn add_hook(&mut self, hook_type: HookType, hook: Box<dyn Hook>) {
+    //     self.hooks.entry(hook_type).or_insert_with(Vec::new).push(hook);
+    // }
+
     pub fn execute_hooks(&self, hook_type: HookType, message: &mut CrossChainMessage, source_chain: ChainId, destination_chain: ChainId) -> CCIHSResult<()> {
-        let hooks = self.hooks.get(&hook_type).ok_or(CCIHSError::HookNotFound)?;
-        for hook in hooks {
-            hook.execute(message, source_chain, destination_chain)?;
+        if let Some(hooks) = self.hooks.get(&hook_type) {
+            for hook in hooks {
+                hook.execute(message, source_chain, destination_chain)?;
+            }
         }
         Ok(())
     }
 
+    // pub async fn execute_hooks(&self, hook_type: HookType, message: &mut CrossChainMessage) -> CCIHSResult<()> {
+    //     if let Some(hooks) = self.hooks.get(&hook_type) {
+    //         for hook in hooks {
+    //             hook.execute(message).await?;
+    //         }
+    //     }
+    //     Ok(())
+    // }
+
     pub fn remove_hook(&mut self, hook_type: HookType, index: usize) -> CCIHSResult<()> {
-        let hooks = self.hooks.get_mut(&hook_type).ok_or(CCIHSError::HookNotFound)?;
-        if index < hooks.len() {
-            hooks.remove(index);
-            Ok(())
+        if let Some(hooks) = self.hooks.get_mut(&hook_type) {
+            if index < hooks.len() {
+                hooks.remove(index);
+                Ok(())
+            } else {
+                Err(CCIHSError::HookIndexOutOfBounds)
+            }
         } else {
-            Err(CCIHSError::HookIndexOutOfBounds)
+            Err(CCIHSError::HookTypeNotFound)
         }
     }
+
+    // pub fn remove_hook(&mut self, hook_type: HookType, index: usize) -> CCIHSResult<()> {
+    //     if let Some(hooks) = self.hooks.get_mut(&hook_type) {
+    //         if index < hooks.len() {
+    //             hooks.remove(index);
+    //             Ok(())
+    //         } else {
+    //             Err(CCIHSError::HookIndexOutOfBounds)
+    //         }
+    //     } else {
+    //         Err(CCIHSError::HookTypeNotFound)
+    //     }
+    // }
 
     pub fn clear_hooks(&mut self, hook_type: HookType) {
         if let Some(hooks) = self.hooks.get_mut(&hook_type) {
@@ -48,11 +82,11 @@ impl HookManager {
     }
 }
 
-impl Default for HookManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// impl Default for HookManager {
+//     fn default() -> Self {
+//         Self::new()
+//     }
+// }
 
 
 // This implementation provides a flexible and robust hook system for your CCIHS project. Here are some key features:
