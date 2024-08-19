@@ -1,7 +1,7 @@
 pub mod core;
 pub mod protocol;
 pub mod api;
-pub mod hook;
+pub mod hooks;
 pub mod utility;
 pub mod types;
 pub mod state;
@@ -20,6 +20,8 @@ pub use types::{
     CCIHSResult,
     CrossChainResult,
 };
+
+pub use hooks::{Hook, HookType, HookManager};
 
 pub use state::*;
 // pub use core::CCIHSCore;  // Export CCIHSCore for easy access

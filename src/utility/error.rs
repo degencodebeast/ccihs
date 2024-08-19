@@ -43,5 +43,20 @@ pub enum CCIHSError {
     #[error("Protocol not configured: {0}")]
     ProtocolNotConfigured(String),
 
+    #[error("Empty payload")]
+    EmptyPayload,
+
+    #[error("Invalid nonce")]
+    InvalidNonce,
+
+    #[error("Message expired")]
+    MessageExpired,
+
+    #[error("Message not executed")]
+    MessageNotExecuted,
+    
+    #[error("Timestamp error")]
+    TimestampError,
+
     // Add more error types as needed
 }

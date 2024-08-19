@@ -1,7 +1,7 @@
 use crate::types::{CrossChainMessage, ChainId, CCIHSResult};
 use crate::config::{CCIHSConfig, ProtocolType};
 use crate::error::CCIHSError;
-use crate::hook::{HookManager, HookType, Hook};
+use crate::hooks::{HookManager, HookType, Hook};
 use crate::protocol::ProtocolAdapter;
 use super::chain_management::ChainManager;
 use super::error::CoreError;
