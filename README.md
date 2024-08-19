@@ -7,7 +7,7 @@
 
 ## Overview
 
-CCIHS (Cross-Chain Interoperability Hooks for Solana) is a cutting-edge Rust library designed to revolutionize cross-chain communication for Solana-based applications. In an increasingly interconnected blockchain ecosystem, CCIHS serves as a crucial bridge, enabling seamless interaction between Solana and other blockchain networks.
+CCIHS (Cross-Chain Interoperability Hooks for Solana) is a cutting-edge Rust library designed to revolutionize cross-chain communication for Solana-based applications. In an increasingly interconnected blockchain ecosystem, CCIHS serves as a crucial transport network interface, enabling seamless interaction between Solana and other blockchain networks.
 
 At its core, CCIHS provides a robust and flexible framework that abstracts the complexities of cross-chain messaging. It leverages Solana's high-performance architecture while offering a standardized interface for interacting with various cross-chain protocols. This approach not only simplifies development but also future-proofs applications against changes in underlying cross-chain technologies.
 
@@ -17,13 +17,13 @@ Key aspects of CCIHS include:
 
 2. **Extensible Hook System**: The library's hook system is its standout feature, offering unparalleled flexibility in message processing. Developers can inject custom logic at various stages of the cross-chain communication process, enabling advanced use cases like automatic fee adjustments, message validation, or data transformations.
 
-3. **Solana Optimization**: Built with Solana's unique capabilities in mind, CCIHS is optimized for high throughput and low latency, ensuring efficient use of Solana's resources.
+3. **Solana Optimization**: Built with Solana's unique capabilities in mind, CCIHS is optimized for high throughput and low latency, ensuring efficient use of Solana's resources when interfacing with cross-chain transport networks.
 
 4. **Comprehensive Error Handling**: Cross-chain operations involve multiple points of potential failure. CCIHS implements robust error handling and recovery mechanisms, enhancing the reliability of cross-chain applications.
 
 5. **Developer-Friendly**: With a focus on developer experience, CCIHS offers clear documentation, intuitive APIs, and helpful abstractions that make cross-chain development more accessible.
 
-6. **Security-First Design**: Recognizing the critical nature of cross-chain communications, CCIHS incorporates multiple layers of security checks and balances to safeguard against common vulnerabilities.
+6. **Security-First Design**: Recognizing the critical nature of cross-chain communications, CCIHS incorporates multiple layers of security checks and balances to safeguard against common vulnerabilities in transport network interactions.
 
 ## Features
 
