@@ -1,6 +1,6 @@
 use super::Hook;
 use crate::types::{CrossChainMessage, ChainId, CCIHSResult};
-use crate::error::CCIHSError;
+use crate::CCIHSError;
 
 pub struct FeeCalculationHook {
     fee_percentage: f64,

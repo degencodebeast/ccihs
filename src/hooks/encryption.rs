@@ -1,6 +1,6 @@
 use super::Hook;
 use crate::types::{CrossChainMessage, ChainId, CCIHSResult};
-use crate::error::CCIHSError;
+use crate::CCIHSError;
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use aes_gcm::aead::{Aead, NewAead};
 

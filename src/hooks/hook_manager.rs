@@ -1,8 +1,8 @@
 // hook/hook_manager.rs
 
-use super::{Hook, HookType, PreDispatchHook, PostDispatchHook, PreExecutionHook, PostExecutionHook};
+use super::{Hook, HookType};
 use crate::types::{CrossChainMessage, ChainId};
-use crate::error::{CCIHSResult, CCIHSError};
+use crate::{CCIHSResult, CCIHSError};
 use std::collections::HashMap;
 
 pub struct HookManager {

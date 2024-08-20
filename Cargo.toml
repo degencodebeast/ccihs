@@ -25,5 +25,6 @@ wormhole-token-bridge-solana = "0.0.1-alpha.4"
 wormhole-core-bridge-solana = "0.0.1-alpha.5"
 wormhole-anchor-sdk = "0.29.0-alpha.1"
 wormhole-io = "0.3.0-alpha.1"
+log = "0.4.22"
 
  

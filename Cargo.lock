@@ -859,6 +859,7 @@ dependencies = [
  "anchor-lang 0.28.0",
  "borsh 0.10.3",
  "ethereum-types",
+ "log",
  "solana-program 1.16.25",
  "thiserror",
  "wormhole-anchor-sdk",

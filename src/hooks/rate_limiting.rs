@@ -1,6 +1,6 @@
 use super::Hook;
 use crate::types::{CrossChainMessage, ChainId, CCIHSResult};
-use crate::error::CCIHSError;
+use crate::CCIHSError;
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 use parking_lot::Mutex;

@@ -1,6 +1,6 @@
 use super::Hook;
 use crate::types::{CrossChainMessage, ChainId, CCIHSResult};
-use crate::error::CCIHSError;
+use crate::CCIHSError;
 
 pub struct ValidationHook {
     max_payload_size: usize,
