@@ -36,9 +36,6 @@ Key aspects of CCIHS include:
 
 ## Use Cases
 
-CCIHS enables a wide range of cross-chain applications. Here are some key use cases:
-## Use Cases
-
 CCIHS enables unique cross-chain applications that were previously difficult or impossible to implement. Here are some key use cases that showcase CCIHS's capabilities:
 
 1. **Dynamic Cross-Chain Liquidity Routing**: 

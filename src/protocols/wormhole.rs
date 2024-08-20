@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_lang::solana_program::program::invoke_signed;
+use crate::protocols::ProtocolAdapter;
 
 use wormhole_token_bridge_solana::{
     program::WormholeTokenBridge,
@@ -9,15 +10,13 @@ use wormhole_token_bridge_solana::{
 };
 
 use wormhole_core_bridge_solana::{
-    sdk::{
-        claim_vaa, ClaimVaa,
-        finalize_message_v1, init_message_v1, write_message_v1,
-        InitMessageV1, WriteMessageV1, FinalizeMessageV1,
-    },
-    state::{Bridge as CoreBridgeConfig, GuardianSet, PostedVaaKey, SequenceTracker, PostedMessageV1},
-    types::Payload,
+    sdk::{VaaAccount, Vaa, Payload},
+    state::{Bridge as CoreBridgeConfig, GuardianSet, PostedVaaKey, SequenceTracker, PostedVaa},
     instruction as core_bridge_instruction,
+    processor::verify_encoded_vaa_v1, post_vaa_v1, 
 };
+
+use wormhole_anchor_sdk::token_bridge::post_message;
 
 use crate::types::{CrossChainMessage, ChainId, CrossChainAddress, CCIHSResult, MessageStatus};
 use crate::error::CCIHSError;
@@ -34,81 +33,52 @@ impl WormholeAdapter {
         Self { config, hook_manager }
     }
 
-    fn serialize_message(&self, message: &CrossChainMessage) -> Result<Payload> {
-        Ok(Payload {
-            source_chain: message.source_chain.0,
-            target_chain: message.destination_chain.0,
-            source_address: message.sender.to_bytes().to_vec(),
-            target_address: message.recipient.clone(),
-            payload: message.payload.clone(),
-        })
+    fn serialize_message(&self, message: &CrossChainMessage) -> Result<Vec<u8>> {
+        // Implement serialization logic here
+        // This is a placeholder, adjust according to your CrossChainMessage structure
+        Ok(message.try_to_vec()?)
     }
 
-    fn deserialize_message(&self, payload: &Payload) -> Result<CrossChainMessage> {
-        Ok(CrossChainMessage {
-            nonce: 0, // You might want to store this elsewhere
-            source_chain: ChainId(payload.source_chain),
-            destination_chain: ChainId(payload.target_chain),
-            sender: Pubkey::new_from_array(payload.source_address.try_into().map_err(|_| error!(CCIHSError::DeserializationError("Invalid source address".to_string())))?),
-            recipient: payload.target_address.clone(),
-            payload: payload.payload.clone(),
-            timestamp: 0, // You might want to set this when receiving the message
-        })
+    fn deserialize_message(&self, payload: &[u8]) -> Result<CrossChainMessage> {
+        // Implement deserialization logic here
+        // This is a placeholder, adjust according to your CrossChainMessage structure
+        CrossChainMessage::try_from_slice(payload)
     }
 }
 
-impl WormholeAdapter {
-    pub fn send_message<'info>(
+impl ProtocolAdapter for WormholeAdapter {
+    fn send_message<'info>(
         &self,
         ctx: Context<'_, '_, '_, 'info, SendMessage<'info>>,
         message: &CrossChainMessage,
     ) -> Result<()> {
         // Execute pre-dispatch hooks
-        self.hook_manager.execute_hooks(HookType::PreDispatch, &mut message, message.source_chain, message.destination_chain)?;
+        self.hook_manager.execute_hooks(HookType::PreDispatch, message, message.source_chain, message.destination_chain)?;
 
         let payload = self.serialize_message(message)?;
         
-        // Initialize the message
-        init_message_v1(
+        // Post the message
+        post_message(
             CpiContext::new(
                 ctx.accounts.wormhole_program.to_account_info(),
-                InitMessageV1 {
-                    payer: ctx.accounts.payer.to_account_info(),
-                    draft_message: ctx.accounts.message.to_account_info(),
+                PostMessage {
+                    config: ctx.accounts.core_bridge_config.to_account_info(),
+                    message: ctx.accounts.message.to_account_info(),
                     emitter: ctx.accounts.wormhole_emitter.to_account_info(),
+                    sequence: ctx.accounts.sequence.to_account_info(),
+                    payer: ctx.accounts.payer.to_account_info(),
+                    fee_collector: ctx.accounts.fee_collector.to_account_info(),
+                    clock: ctx.accounts.clock.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
             ),
-            InitMessageV1Args {
-                nonce: message.nonce,
-                payload_size: payload.try_to_vec()?.len() as u32,
-            },
+            message.nonce,
+            payload,
+            message.consistency_level,
         )?;
 
-        // Write the message
-        write_message_v1(
-            CpiContext::new(
-                ctx.accounts.wormhole_program.to_account_info(),
-                WriteMessageV1 {
-                    payer: ctx.accounts.payer.to_account_info(),
-                    draft_message: ctx.accounts.message.to_account_info(),
-                    emitter: ctx.accounts.wormhole_emitter.to_account_info(),
-                },
-            ),// index
-            payload.try_to_vec()?,
-        )?;
-
-        // Finalize the message
-        finalize_message_v1(CpiContext::new(
-            ctx.accounts.wormhole_program.to_account_info(),
-            FinalizeMessageV1 {
-                payer: ctx.accounts.payer.to_account_info(),
-                draft_message: ctx.accounts.message.to_account_info(),
-                emitter: ctx.accounts.wormhole_emitter.to_account_info(),
-            },
-        ))?;
-
-        // Post the message (this is specific to token bridge)
+        // Execute token bridge transfer
         let transfer_ix = token_bridge_instruction::transfer_native(
             self.config.token_bridge_program_id,
             self.config.wormhole_program_id,
@@ -124,7 +94,7 @@ impl WormholeAdapter {
             ctx.accounts.fee_collector.key(),
             ctx.accounts.clock.key(),
             message.destination_chain.0,
-            message.recipient.clone(),
+            message.recipient.to_vec(),
             message.amount,
             None, // No relayer fee
         );
@@ -152,50 +122,42 @@ impl WormholeAdapter {
         )?;
 
         // Execute post-dispatch hooks
-        self.hook_manager.execute_hooks(HookType::PostDispatch, &mut message, message.source_chain, message.destination_chain)?;
+        self.hook_manager.execute_hooks(HookType::PostDispatch, message, message.source_chain, message.destination_chain)?;
 
         Ok(())
     }
 
-    pub fn receive_message<'info>(
+    fn receive_message<'info>(
         &self,
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
     ) -> Result<CrossChainMessage> {
-
-         // First, verify that the VAA hasn't been claimed yet
-    let vaa_claimed = ctx.accounts.claim_account.claimed;
-    if vaa_claimed {
-        return Err(error!(CCIHSError::VAAAlreadyClaimed));
-    }
-
-        // Claim the VAA
-        claim_vaa(
+        // Verify and post the VAA
+        post_vaa_v1(
             CpiContext::new(
                 ctx.accounts.wormhole_program.to_account_info(),
-                ClaimVaa {
+                PostVaa {
                     payer: ctx.accounts.payer.to_account_info(),
-                    claim: ctx.accounts.claim_account.to_account_info(),
+                    signature_set: ctx.accounts.signature_set.to_account_info(),
+                    posted_vaa: ctx.accounts.posted_vaa.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
                 },
             ),
-            ctx.accounts.payer.to_account_info(),
             ctx.accounts.vaa.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
         )?;
 
         // Deserialize the VAA
-        let posted_message = PostedMessageV1::try_from_slice(&ctx.accounts.vaa.data.borrow())?;
-        let payload = Payload::try_from_slice(&posted_message.payload)?;
-        let message = self.deserialize_message(&payload)?;
+        let posted_vaa = PostedVaa::try_from_slice(&ctx.accounts.posted_vaa.data.borrow())?;
+        let message = self.deserialize_message(&posted_vaa.payload)?;
 
         // Execute pre-execution hooks
-        self.hook_manager.execute_hooks(HookType::PreExecution, &mut message, message.source_chain, message.destination_chain)?;
+        self.hook_manager.execute_hooks(HookType::PreExecution, &message, message.source_chain, message.destination_chain)?;
 
         // Complete token transfer
         let complete_transfer_ix = token_bridge_instruction::complete_transfer_native(
             self.config.token_bridge_program_id,
             self.config.wormhole_program_id,
             ctx.accounts.payer.key(),
-            ctx.accounts.vaa.key(),
+            ctx.accounts.posted_vaa.key(),
             ctx.accounts.token_bridge_config.key(),
             ctx.accounts.to_token_account.key(),
             ctx.accounts.custody_signer.key(),
@@ -208,7 +170,7 @@ impl WormholeAdapter {
             &complete_transfer_ix,
             &[
                 ctx.accounts.payer.to_account_info(),
-                ctx.accounts.vaa.to_account_info(),
+                ctx.accounts.posted_vaa.to_account_info(),
                 ctx.accounts.token_bridge_config.to_account_info(),
                 ctx.accounts.to_token_account.to_account_info(),
                 ctx.accounts.custody_signer.to_account_info(),
@@ -224,35 +186,27 @@ impl WormholeAdapter {
         )?;
 
         // Execute post-execution hooks
-        self.hook_manager.execute_hooks(HookType::PostExecution, &mut message, message.source_chain, message.destination_chain)?;
+        self.hook_manager.execute_hooks(HookType::PostExecution, &message, message.source_chain, message.destination_chain)?;
 
         Ok(message)
     }
 
-    pub fn verify_message<'info>(
+    fn verify_message<'info>(
         &self,
         ctx: Context<'_, '_, '_, 'info, VerifyMessage<'info>>,
     ) -> Result<bool> {
-        let verify_signatures_ix = core_bridge_instruction::verify_signatures(
-            self.config.wormhole_program_id,
-            ctx.accounts.payer.key(),
-            ctx.accounts.guardian_set.key(),
-            ctx.accounts.vaa.key(),
-            ctx.accounts.signature_set.key(),
-        );
-
-        invoke_signed(
-            &verify_signatures_ix,
-            &[
-                ctx.accounts.payer.to_account_info(),
-                ctx.accounts.guardian_set.to_account_info(),
-                ctx.accounts.vaa.to_account_info(),
-                ctx.accounts.signature_set.to_account_info(),
-                ctx.accounts.clock.to_account_info(),
-                ctx.accounts.rent.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-            ],
-            &[], // No seeds for invoke_signed in this case
+        verify_signature(
+            CpiContext::new(
+                ctx.accounts.wormhole_program.to_account_info(),
+                VerifySignature {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    guardian_set: ctx.accounts.guardian_set.to_account_info(),
+                    signature_set: ctx.accounts.signature_set.to_account_info(),
+                    instruction: ctx.accounts.instruction.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                },
+            ),
+            ctx.accounts.vaa.to_account_info(),
         )?;
 
         Ok(true)
@@ -263,7 +217,6 @@ impl WormholeAdapter {
     }
 }
 
-// Account structures remain the same as in the previous version
 #[derive(Accounts)]
 pub struct SendMessage<'info> {
     #[account(mut)]
@@ -293,8 +246,11 @@ pub struct SendMessage<'info> {
 pub struct ReceiveMessage<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    #[account(mut)]
     pub vaa: AccountInfo<'info>,
+    #[account(mut)]
+    pub posted_vaa: AccountInfo<'info>,
+    #[account(mut)]
+    pub signature_set: AccountInfo<'info>,
     pub token_bridge_config: Account<'info, TokenBridgeConfig>,
     #[account(mut)]
     pub to_token_account: Account<'info, TokenAccount>,
@@ -314,10 +270,10 @@ pub struct VerifyMessage<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub guardian_set: AccountInfo<'info>,
-    #[account(mut)]
     pub vaa: AccountInfo<'info>,
     #[account(mut)]
     pub signature_set: AccountInfo<'info>,
+    pub instruction: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,

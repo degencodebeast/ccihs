@@ -3,7 +3,7 @@ use crate::types::{CrossChainMessage, ChainId, CCIHSResult};
 use crate::config::CCIHSConfig;
 use super::endpoints;
 use super::error::APIError;
-use crate::protocol::ProtocolType;
+use crate::protocols::ProtocolType;
 
 pub struct CCIHSAPI {
     core: CCIHSCore,

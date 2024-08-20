@@ -1,26 +1,20 @@
-// config/transport_config.rs
+// config/Protocol_config.rs
 
 use crate::types::ChainId;
 use std::collections::HashSet;
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum TransportType {
-    Wormhole,
-    LayerZero,
-    // Add other transport types as needed
-}
+use crate::types::ProtocolType;
 
 #[derive(Clone, Debug)]
-pub struct TransportConfig {
-    pub transport_type: TransportType,
+pub struct ProtocolConfig {
+    pub protocol_type: ProtocolType,
     pub supported_chains: HashSet<ChainId>,
     pub additional_params: HashMap<String, String>,
 }
 
-impl TransportConfig {
-    pub fn new(transport_type: TransportType) -> Self {
+impl ProtocolConfig {
+    pub fn new(protocol_type: ProtocolType) -> Self {
         Self {
-            transport_type,
+            protocol_type,
             supported_chains: HashSet::new(),
             additional_params: HashMap::new(),
         }

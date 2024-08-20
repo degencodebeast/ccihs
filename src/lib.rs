@@ -1,29 +1,29 @@
 pub mod core;
-pub mod protocol;
+pub mod protocols;
 pub mod api;
 pub mod hooks;
 pub mod utility;
 pub mod types;
 pub mod state;
-// pub mod config;  // Add this if you haven't already
-// pub mod transport;  // Add this for TransportAdapter
-
-
+pub mod config;
 
 pub use utility::{CCIHSError, serialization};
 
-pub use types::{
-    ChainId, 
-    CrossChainMessage, 
-    CrossChainTransaction, 
-    MessageStatus,
-    CCIHSResult,
-    CrossChainResult,
-};
+// pub use types::{
+//     ChainId, 
+//     CrossChainMessage, 
+//     CrossChainTransaction, 
+//     MessageStatus,
+//     CCIHSResult,
+//     CrossChainResult,
+// };
+
+pub use types::*;
 
 pub use hooks::{Hook, HookType, HookManager};
 
 pub use state::*;
-// pub use core::CCIHSCore;  // Export CCIHSCore for easy access
-// pub use config::CCIHSConfig;  // Export CCIHSConfig
-// pub use api::CCIHSAPI;  // Export CCIHSAPI for users of your library
+pub use core::CCIHSCore;  // Export CCIHSCore for easy access
+pub use config::CCIHSConfig;  
+pub use api::CCIHSAPI; 
+pub use protocols::*; 

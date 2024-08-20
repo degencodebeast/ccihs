@@ -1,8 +1,8 @@
-use crate::types::{CrossChainMessage, ChainId, CCIHSResult};
-use crate::config::{CCIHSConfig, ProtocolType};
+use crate::types::{CrossChainMessage, ChainId, CCIHSResult, ProtocolType};
+use crate::config::CCIHSConfig;
 use crate::error::CCIHSError;
 use crate::hooks::{HookManager, HookType, Hook};
-use crate::protocol::ProtocolAdapter;
+use crate::protocols::ProtocolAdapter;
 use super::chain_management::ChainManager;
 use super::error::CoreError;
 use std::collections::HashMap;

@@ -1,36 +1,14 @@
-// config/transport_config.rs
+// config/mod.rs
 
-use crate::types::ChainId;
-use std::collections::HashSet;
+mod ccihs_config;
+mod chain_config;
+mod protocol_config;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum TransportType {
-    Wormhole,
-    LayerZero,
-    // Add other transport types as needed
-}
+pub use ccihs_config::CCIHSConfig;
+pub use chain_config::ChainConfig;
+pub use protocol_config::ProtocolConfig;
 
-#[derive(Clone, Debug)]
-pub struct TransportConfig {
-    pub transport_type: TransportType,
-    pub supported_chains: HashSet<ChainId>,
-    pub additional_params: HashMap<String, String>,
-}
-
-impl TransportConfig {
-    pub fn new(transport_type: TransportType) -> Self {
-        Self {
-            transport_type,
-            supported_chains: HashSet::new(),
-            additional_params: HashMap::new(),
-        }
-    }
-
-    pub fn add_supported_chain(&mut self, chain_id: ChainId) {
-        self.supported_chains.insert(chain_id);
-    }
-
-    pub fn add_param(&mut self, key: &str, value: &str) {
-        self.additional_params.insert(key.to_string(), value.to_string());
-    }
-}
+// If you want to re-export everything from these modules, you can use:
+// pub use ccihs_config::*;
+// pub use chain_config::*;
+// pub use protocol_config::*;

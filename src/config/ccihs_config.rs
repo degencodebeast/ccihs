@@ -1,16 +1,16 @@
 // config/ccihs_config.rs
 
-use super::{ChainConfig, TransportConfig, TransportType};
-use crate::types::ChainId;
-use crate::error::{CCIHSResult, CCIHSError};
+use super::{ChainConfig, ProtocolConfig};
+use crate::types::{ChainId, ProtocolType};
+use crate::{CCIHSResult, CCIHSError};
 use std::collections::HashMap;
 use std::env;
 
 #[derive(Clone, Debug)]
 pub struct CCIHSConfig {
     pub chains: HashMap<ChainId, ChainConfig>,
-    pub transports: HashMap<TransportType, TransportConfig>,
-    pub default_transport: TransportType,
+    pub protocols: HashMap<ProtocolType, ProtocolConfig>,
+    pub default_protocol: ProtocolType,
     pub max_retries: u32,
     pub retry_delay: u64,
 }
@@ -19,8 +19,8 @@ impl CCIHSConfig {
     pub fn new() -> Self {
         let mut config = Self {
             chains: HashMap::new(),
-            transports: HashMap::new(),
-            default_transport: TransportType::Wormhole,
+            protocols: HashMap::new(),
+            default_protocol: ProtocolType::Wormhole,
             max_retries: 3,
             retry_delay: 1000,
         };
@@ -33,13 +33,13 @@ impl CCIHSConfig {
         self.chains.insert(chain_config.chain_id, chain_config);
     }
 
-    pub fn add_transport(&mut self, transport_config: TransportConfig) {
-        self.transports.insert(transport_config.transport_type.clone(), transport_config);
+    pub fn add_protocol(&mut self, protocol_config: ProtocolConfig) {
+        self.protocols.insert(protocol_config.protocol_type.clone(), protocol_config);
     }
 
-    pub fn set_default_transport(&mut self, transport_type: TransportType) -> CCIHSResult<()> {
-        if self.transports.contains_key(&transport_type) {
-            self.default_transport = transport_type;
+    pub fn set_default_protocol(&mut self, protocol_type: ProtocolType) -> CCIHSResult<()> {
+        if self.protocols.contains_key(&protocol_type) {
+            self.default_protocol = protocol_type;
             Ok(())
         } else {
             Err(CCIHSError::TransportNotConfigured)
@@ -50,15 +50,15 @@ impl CCIHSConfig {
         self.chains.get(chain_id)
     }
 
-    pub fn get_transport_config(&self, transport_type: &TransportType) -> Option<&TransportConfig> {
-        self.transports.get(transport_type)
+    pub fn get_protocol_config(&self, protocol_type: &ProtocolType) -> Option<&ProtocolConfig> {
+        self.protocols.get(protocol_type)
     }
 
     fn load_from_env(&mut self) {
         if let Ok(transport) = env::var("CCIHS_DEFAULT_TRANSPORT") {
             match transport.as_str() {
-                "wormhole" => self.default_transport = TransportType::Wormhole,
-                "layerzero" => self.default_transport = TransportType::LayerZero,
+                "wormhole" => self.default_protocol = ProtocolType::Wormhole,
+                "layerzero" => self.default_protocol = ProtocolType::LayerZero,
                 _ => {},
             }
         }
@@ -82,11 +82,11 @@ impl CCIHSConfig {
         if self.chains.is_empty() {
             return Err(CCIHSError::NoConfiguredChains);
         }
-        if self.transports.is_empty() {
-            return Err(CCIHSError::NoConfiguredTransports);
+        if self.protocols.is_empty() {
+            return Err(CCIHSError::NoConfiguredProtocols);
         }
-        if !self.transports.contains_key(&self.default_transport) {
-            return Err(CCIHSError::InvalidDefaultTransport);
+        if !self.protocols.contains_key(&self.default_protocol) {
+            return Err(CCIHSError::InvalidDefaultProtocol);
         }
         Ok(())
     }
