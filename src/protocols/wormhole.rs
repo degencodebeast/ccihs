@@ -18,9 +18,9 @@ use wormhole_core_bridge_solana::{
 
 use wormhole_anchor_sdk::token_bridge::post_message;
 
-use crate::types::{CrossChainMessage, ChainId, CrossChainAddress, CCIHSResult, MessageStatus};
+use crate::types::{CrossChainMessage, ChainId, CrossChainAddress, CCIHSResult, MessageStatus, HookType};
 use crate::error::CCIHSError;
-use crate::hook::{HookManager, HookType};
+use crate::hooks::HookManager;
 use crate::config::WormholeConfig;
 
 pub struct WormholeAdapter {
@@ -53,7 +53,7 @@ impl ProtocolAdapter for WormholeAdapter {
         message: &CrossChainMessage,
     ) -> Result<()> {
         // Execute pre-dispatch hooks
-        self.hook_manager.execute_hooks(HookType::PreDispatch, message, message.source_chain, message.destination_chain)?;
+        self.hook_manager.execute_hooks(HookType::PreDispatch, &mut message, message.source_chain, message.destination_chain)?;
 
         let payload = self.serialize_message(message)?;
         
@@ -122,7 +122,7 @@ impl ProtocolAdapter for WormholeAdapter {
         )?;
 
         // Execute post-dispatch hooks
-        self.hook_manager.execute_hooks(HookType::PostDispatch, message, message.source_chain, message.destination_chain)?;
+        self.hook_manager.execute_hooks(HookType::PostDispatch, &mut message, message.source_chain, message.destination_chain)?;
 
         Ok(())
     }
@@ -150,7 +150,7 @@ impl ProtocolAdapter for WormholeAdapter {
         let message = self.deserialize_message(&posted_vaa.payload)?;
 
         // Execute pre-execution hooks
-        self.hook_manager.execute_hooks(HookType::PreExecution, &message, message.source_chain, message.destination_chain)?;
+        self.hook_manager.execute_hooks(HookType::PreExecution, &mut message, message.source_chain, message.destination_chain)?;
 
         // Complete token transfer
         let complete_transfer_ix = token_bridge_instruction::complete_transfer_native(
@@ -186,7 +186,7 @@ impl ProtocolAdapter for WormholeAdapter {
         )?;
 
         // Execute post-execution hooks
-        self.hook_manager.execute_hooks(HookType::PostExecution, &message, message.source_chain, message.destination_chain)?;
+        self.hook_manager.execute_hooks(HookType::PostExecution, &mut message, message.source_chain, message.destination_chain)?;
 
         Ok(message)
     }
