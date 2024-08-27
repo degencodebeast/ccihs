@@ -46,6 +46,9 @@ pub enum CCIHSError {
     #[error("Empty payload")]
     EmptyPayload,
 
+    #[error("Payload too large")]
+    PayloadTooLarge,
+
     #[error("Invalid nonce")]
     InvalidNonce,
 

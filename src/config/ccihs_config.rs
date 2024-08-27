@@ -55,8 +55,8 @@ impl CCIHSConfig {
     }
 
     fn load_from_env(&mut self) {
-        if let Ok(transport) = env::var("CCIHS_DEFAULT_TRANSPORT") {
-            match transport.as_str() {
+        if let Ok(protocol) = env::var("CCIHS_DEFAULT_PROTOCOL") {
+            match protocol.as_str() {
                 "wormhole" => self.default_protocol = ProtocolType::Wormhole,
                 "layerzero" => self.default_protocol = ProtocolType::LayerZero,
                 _ => {},
