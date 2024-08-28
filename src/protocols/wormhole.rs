@@ -2,21 +2,20 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_lang::solana_program::program::invoke_signed;
 use crate::protocols::ProtocolAdapter;
+use std::io;
+use wormhole_io::{Readable, Writeable};
 
-use wormhole_token_bridge_solana::{
-    program::WormholeTokenBridge,
-    state::{Config as TokenBridgeConfig, EndpointRegistration},
-    instruction as token_bridge_instruction,
+use wormhole_anchor_sdk::{wormhole, token_bridge};
+use wormhole_anchor_sdk::token_bridge::{
+    program::TokenBridge,
+    cpi::accounts::{CompleteNative, TransferNative},
+    ConfigAccount as TokenBridgeConfig,
 };
-
-use wormhole_core_bridge_solana::{
-    sdk::{VaaAccount, Vaa, Payload},
-    state::{Bridge as CoreBridgeConfig, GuardianSet, PostedVaaKey, SequenceTracker, PostedVaa},
-    instruction as core_bridge_instruction,
-    processor::verify_encoded_vaa_v1, post_vaa_v1, 
+use wormhole_anchor_sdk::wormhole::{
+    program::Wormhole,
+    state::{PostedVaa, BridgeData},
+    VerifySignatures,
 };
-
-use wormhole_anchor_sdk::token_bridge::post_message;
 
 use crate::types::{CrossChainMessage, ChainId, CrossChainAddress, CCIHSResult, MessageStatus, HookType};
 use crate::error::CCIHSError;
@@ -34,15 +33,13 @@ impl WormholeAdapter {
     }
 
     fn serialize_message(&self, message: &CrossChainMessage) -> Result<Vec<u8>> {
-        // Implement serialization logic here
-        // This is a placeholder, adjust according to your CrossChainMessage structure
-        Ok(message.try_to_vec()?)
+        wormhole_io::serialize(message)
+        .map_err(|e| CCIHSError::SerializationError(e.to_string()))
     }
 
     fn deserialize_message(&self, payload: &[u8]) -> Result<CrossChainMessage> {
-        // Implement deserialization logic here
-        // This is a placeholder, adjust according to your CrossChainMessage structure
-        CrossChainMessage::try_from_slice(payload)
+        wormhole_io::deserialize(payload)
+        .map_err(|e| CCIHSError::DeserializationError(e.to_string()))    
     }
 }
 
@@ -58,16 +55,16 @@ impl ProtocolAdapter for WormholeAdapter {
         let payload = self.serialize_message(message)?;
         
         // Post the message
-        post_message(
+        wormhole::post_message(
             CpiContext::new(
                 ctx.accounts.wormhole_program.to_account_info(),
-                PostMessage {
-                    config: ctx.accounts.core_bridge_config.to_account_info(),
-                    message: ctx.accounts.message.to_account_info(),
+                wormhole::PostMessage {
+                    config: ctx.accounts.wormhole_config.to_account_info(),
+                    message: ctx.accounts.wormhole_message.to_account_info(),
                     emitter: ctx.accounts.wormhole_emitter.to_account_info(),
-                    sequence: ctx.accounts.sequence.to_account_info(),
+                    sequence: ctx.accounts.wormhole_sequence.to_account_info(),
                     payer: ctx.accounts.payer.to_account_info(),
-                    fee_collector: ctx.accounts.fee_collector.to_account_info(),
+                    fee_collector: ctx.accounts.wormhole_fee_collector.to_account_info(),
                     clock: ctx.accounts.clock.to_account_info(),
                     rent: ctx.accounts.rent.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
@@ -79,46 +76,34 @@ impl ProtocolAdapter for WormholeAdapter {
         )?;
 
         // Execute token bridge transfer
-        let transfer_ix = token_bridge_instruction::transfer_native(
-            self.config.token_bridge_program_id,
-            self.config.wormhole_program_id,
-            ctx.accounts.payer.key(),
-            ctx.accounts.from_token_account.key(),
-            ctx.accounts.mint.key(),
-            ctx.accounts.message.key(),
-            ctx.accounts.token_bridge_config.key(),
-            ctx.accounts.token_bridge_custody.key(),
-            ctx.accounts.core_bridge_config.key(),
-            ctx.accounts.wormhole_emitter.key(),
-            ctx.accounts.sequence.key(),
-            ctx.accounts.fee_collector.key(),
-            ctx.accounts.clock.key(),
-            message.destination_chain.0,
-            message.recipient.to_vec(),
+        token_bridge::transfer_native(
+            CpiContext::new(
+                ctx.accounts.token_bridge_program.to_account_info(),
+                TransferNative {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    config: ctx.accounts.token_bridge_config.to_account_info(),
+                    from: ctx.accounts.from_token_account.to_account_info(),
+                    mint: ctx.accounts.mint.to_account_info(),
+                    custody: ctx.accounts.token_bridge_custody.to_account_info(),
+                    authority_signer: ctx.accounts.token_bridge_authority_signer.to_account_info(),
+                    custody_signer: ctx.accounts.token_bridge_custody_signer.to_account_info(),
+                    wormhole_bridge: ctx.accounts.wormhole_config.to_account_info(),
+                    wormhole_message: ctx.accounts.wormhole_message.to_account_info(),
+                    wormhole_emitter: ctx.accounts.wormhole_emitter.to_account_info(),
+                    wormhole_sequence: ctx.accounts.wormhole_sequence.to_account_info(),
+                    wormhole_fee_collector: ctx.accounts.wormhole_fee_collector.to_account_info(),
+                    clock: ctx.accounts.clock.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                    wormhole_program: ctx.accounts.wormhole_program.to_account_info(),
+                },
+            ),
             message.amount,
-            None, // No relayer fee
-        );
-
-        invoke_signed(
-            &transfer_ix,
-            &[
-                ctx.accounts.payer.to_account_info(),
-                ctx.accounts.from_token_account.to_account_info(),
-                ctx.accounts.mint.to_account_info(),
-                ctx.accounts.message.to_account_info(),
-                ctx.accounts.token_bridge_config.to_account_info(),
-                ctx.accounts.token_bridge_custody.to_account_info(),
-                ctx.accounts.core_bridge_config.to_account_info(),
-                ctx.accounts.wormhole_emitter.to_account_info(),
-                ctx.accounts.sequence.to_account_info(),
-                ctx.accounts.fee_collector.to_account_info(),
-                ctx.accounts.clock.to_account_info(),
-                ctx.accounts.rent.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-                ctx.accounts.token_program.to_account_info(),
-                ctx.accounts.wormhole_program.to_account_info(),
-            ],
-            &[], // No seeds for invoke_signed in this case
+            message.recipient.to_vec(),
+            message.destination_chain.0,
+            message.nonce,
+            message.consistency_level,
         )?;
 
         // Execute post-dispatch hooks
@@ -132,13 +117,26 @@ impl ProtocolAdapter for WormholeAdapter {
         ctx: Context<'_, '_, '_, 'info, ReceiveMessage<'info>>,
     ) -> Result<CrossChainMessage> {
         // Verify and post the VAA
-        post_vaa_v1(
+        wormhole::verify_signature(
             CpiContext::new(
                 ctx.accounts.wormhole_program.to_account_info(),
-                PostVaa {
+                VerifySignatures {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    guardian_set: ctx.accounts.guardian_set.to_account_info(),
+                    signature_set: ctx.accounts.signature_set.to_account_info(),
+                    instructions: ctx.accounts.instructions.to_account_info(),
+                },
+            ),
+            ctx.accounts.vaa.to_account_info(),
+        )?;
+
+        wormhole::post_vaa(
+            CpiContext::new(
+                ctx.accounts.wormhole_program.to_account_info(),
+                wormhole::PostVaa {
                     payer: ctx.accounts.payer.to_account_info(),
                     signature_set: ctx.accounts.signature_set.to_account_info(),
-                    posted_vaa: ctx.accounts.posted_vaa.to_account_info(),
+                    post_vaa: ctx.accounts.posted_vaa.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
             ),
@@ -153,36 +151,26 @@ impl ProtocolAdapter for WormholeAdapter {
         self.hook_manager.execute_hooks(HookType::PreExecution, &mut message, message.source_chain, message.destination_chain)?;
 
         // Complete token transfer
-        let complete_transfer_ix = token_bridge_instruction::complete_transfer_native(
-            self.config.token_bridge_program_id,
-            self.config.wormhole_program_id,
-            ctx.accounts.payer.key(),
-            ctx.accounts.posted_vaa.key(),
-            ctx.accounts.token_bridge_config.key(),
-            ctx.accounts.to_token_account.key(),
-            ctx.accounts.custody_signer.key(),
-            ctx.accounts.mint.key(),
-            ctx.accounts.custody_account.key(),
-            ctx.accounts.clock.key(),
-        );
-
-        invoke_signed(
-            &complete_transfer_ix,
-            &[
-                ctx.accounts.payer.to_account_info(),
-                ctx.accounts.posted_vaa.to_account_info(),
-                ctx.accounts.token_bridge_config.to_account_info(),
-                ctx.accounts.to_token_account.to_account_info(),
-                ctx.accounts.custody_signer.to_account_info(),
-                ctx.accounts.mint.to_account_info(),
-                ctx.accounts.custody_account.to_account_info(),
-                ctx.accounts.clock.to_account_info(),
-                ctx.accounts.rent.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-                ctx.accounts.token_program.to_account_info(),
-                ctx.accounts.wormhole_program.to_account_info(),
-            ],
-            &[], // No seeds for invoke_signed in this case
+        token_bridge::complete_native(
+            CpiContext::new(
+                ctx.accounts.token_bridge_program.to_account_info(),
+                CompleteNative {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    config: ctx.accounts.token_bridge_config.to_account_info(),
+                    vaa: ctx.accounts.posted_vaa.to_account_info(),
+                    claim: ctx.accounts.claim.to_account_info(),
+                    foreign_endpoint: ctx.accounts.foreign_endpoint.to_account_info(),
+                    to: ctx.accounts.to_token_account.to_account_info(),
+                    redeemer: ctx.accounts.redeemer.to_account_info(),
+                    custody: ctx.accounts.custody_account.to_account_info(),
+                    mint: ctx.accounts.mint.to_account_info(),
+                    custody_signer: ctx.accounts.custody_signer.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                    wormhole_program: ctx.accounts.wormhole_program.to_account_info(),
+                },
+            ),
         )?;
 
         // Execute post-execution hooks
@@ -195,15 +183,14 @@ impl ProtocolAdapter for WormholeAdapter {
         &self,
         ctx: Context<'_, '_, '_, 'info, VerifyMessage<'info>>,
     ) -> Result<bool> {
-        verify_signature(
+        wormhole::verify_signature(
             CpiContext::new(
                 ctx.accounts.wormhole_program.to_account_info(),
-                VerifySignature {
+                wormhole::VerifySignature {
                     payer: ctx.accounts.payer.to_account_info(),
                     guardian_set: ctx.accounts.guardian_set.to_account_info(),
                     signature_set: ctx.accounts.signature_set.to_account_info(),
-                    instruction: ctx.accounts.instruction.to_account_info(),
-                    system_program: ctx.accounts.system_program.to_account_info(),
+                    instructions: ctx.accounts.instructions.to_account_info(),
                 },
             ),
             ctx.accounts.vaa.to_account_info(),
@@ -225,21 +212,24 @@ pub struct SendMessage<'info> {
     pub from_token_account: Account<'info, TokenAccount>,
     pub mint: Account<'info, Mint>,
     #[account(mut)]
-    pub message: AccountInfo<'info>,
+    pub wormhole_message: AccountInfo<'info>,
+    pub wormhole_config: Account<'info, BridgeData>,
     pub token_bridge_config: Account<'info, TokenBridgeConfig>,
     #[account(mut)]
     pub token_bridge_custody: AccountInfo<'info>,
-    pub core_bridge_config: Account<'info, CoreBridgeConfig>,
+    pub token_bridge_authority_signer: AccountInfo<'info>,
+    pub token_bridge_custody_signer: AccountInfo<'info>,
     pub wormhole_emitter: AccountInfo<'info>,
     #[account(mut)]
-    pub sequence: AccountInfo<'info>,
+    pub wormhole_sequence: AccountInfo<'info>,
     #[account(mut)]
-    pub fee_collector: AccountInfo<'info>,
+    pub wormhole_fee_collector: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
-    pub wormhole_program: Program<'info, WormholeTokenBridge>,
+    pub wormhole_program: Program<'info, Wormhole>,
+    pub token_bridge_program: Program<'info, TokenBridge>,
 }
 
 #[derive(Accounts)]
@@ -251,9 +241,14 @@ pub struct ReceiveMessage<'info> {
     pub posted_vaa: AccountInfo<'info>,
     #[account(mut)]
     pub signature_set: AccountInfo<'info>,
+    pub guardian_set: AccountInfo<'info>,
     pub token_bridge_config: Account<'info, TokenBridgeConfig>,
     #[account(mut)]
     pub to_token_account: Account<'info, TokenAccount>,
+    pub redeemer: AccountInfo<'info>,
+    pub foreign_endpoint: AccountInfo<'info>,
+    #[account(mut)]
+    pub claim: AccountInfo<'info>,
     pub custody_signer: AccountInfo<'info>,
     pub mint: Account<'info, Mint>,
     #[account(mut)]
@@ -262,7 +257,9 @@ pub struct ReceiveMessage<'info> {
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
-    pub wormhole_program: Program<'info, WormholeTokenBridge>,
+    pub wormhole_program: Program<'info, Wormhole>,
+    pub token_bridge_program: Program<'info, TokenBridge>,
+    pub instructions: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -277,6 +274,7 @@ pub struct VerifyMessage<'info> {
     pub clock: Sysvar<'info, Clock>,
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
+    pub wormhole_program: Program<'info, Wormhole>,
 }
 
 

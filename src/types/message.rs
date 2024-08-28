@@ -66,7 +66,6 @@ impl CrossChainMessage {
     // Add other methods as needed
 }
     
-
 #[cfg_attr(feature = "native", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
 #[derive(Clone, Debug, PartialEq)]
