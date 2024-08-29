@@ -2,22 +2,31 @@ use anchor_lang::prelude::*;
 use crate::config::protocol_config::ProtocolConfigTrait;
 use crate::types::{ChainId, ProtocolType};
 use std::collections::{HashSet, HashMap};
+use std::collections::BTreeMap;
 
 #[account]
 #[derive(Default)]
 pub struct WormholeConfig {
     pub owner: Pubkey,
     pub fee: u64,
+    /// [BridgeData](wormhole_anchor_sdk::wormhole::BridgeData) address.
     pub wormhole_bridge: Pubkey,
+    /// [FeeCollector](wormhole_anchor_sdk::wormhole::FeeCollector) address.
     pub wormhole_fee_collector: Pubkey,
-    pub wormhole_emitter: Pubkey,
+    /// [SequenceTracker](wormhole_anchor_sdk::wormhole::SequenceTracker) address.
     pub wormhole_sequence: Pubkey,
+    pub wormhole_emitter: Pubkey,
+    pub foreign_emitters: BTreeMap<u16, Pubkey>,
+    //pub foreign_emitters: BTreeMap<u16, ForeignEmitter>,
+    pub bump: u8,
     supported_chains: HashSet<ChainId>,
     additional_params: HashMap<String, String>,
 }
 
 impl WormholeConfig {
-    pub const SPACE: usize = 32 + 8 + 32 + 32 + 32 + 32 + 64 + 64; // Adjust as needed
+    pub const SPACE: usize = 32 + 8 + 32 + 32 + 32 + 32 + 64 + 64 + 1 + 64 + 64;
+
+    pub const SEED_PREFIX: &'static [u8; 6] = b"wormhole_config";
 
     pub fn new(
         owner: Pubkey,
@@ -26,6 +35,7 @@ impl WormholeConfig {
         wormhole_fee_collector: Pubkey,
         wormhole_emitter: Pubkey,
         wormhole_sequence: Pubkey,
+        bump: u8,
     ) -> Self {
         Self {
             owner,
@@ -34,9 +44,23 @@ impl WormholeConfig {
             wormhole_fee_collector,
             wormhole_emitter,
             wormhole_sequence,
+            foreign_emitters: BTreeMap::new(),
+            bump,
             supported_chains: HashSet::new(),
             additional_params: HashMap::new(),
         }
+    }
+
+    pub fn add_foreign_emitter(&mut self, chain: u16, emitter: Pubkey) {
+        self.foreign_emitters.insert(chain, emitter);
+    }
+
+    pub fn get_foreign_emitter(&self, chain: u16) -> Option<&Pubkey> {
+        self.foreign_emitters.get(&chain)
+    }
+
+    pub fn remove_foreign_emitter(&mut self, chain: u16) -> Option<Pubkey> {
+        self.foreign_emitters.remove(&chain)
     }
 
     pub fn add_supported_chain(&mut self, chain_id: ChainId) {
