@@ -2,12 +2,14 @@ use anchor_lang::prelude::*;
 use wormhole_anchor_sdk::wormhole;
 
 #[account]
-
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct ForeignEmitter {
-    pub chain: u16,
-    pub address: [u8; 32],
-    pub bump: u8,
+  /// Emitter chain. Cannot equal `1` (Solana's Chain ID).
+  pub chain: u16,
+  /// Emitter address. Cannot be zero address.
+  pub address: [u8; 32],
+
+  //bump
 }
 
 impl ForeignEmitter {

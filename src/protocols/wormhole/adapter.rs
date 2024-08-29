@@ -4,6 +4,9 @@ use anchor_lang::solana_program::program::invoke_signed;
 use crate::protocols::ProtocolAdapter;
 use std::io;
 use wormhole_io::{Readable, Writeable};
+use super::state::*;
+use std::collections::BTreeMap;
+
 
 use wormhole_anchor_sdk::{wormhole, token_bridge};
 use wormhole_anchor_sdk::token_bridge::{
@@ -25,7 +28,7 @@ use super::config::WormholeConfig;
 pub struct WormholeAdapter {
     pub config: WormholeConfig,
     hook_manager: HookManager,
-    foreign_emitters: BTreeMap<u16, ForeignEmitter>,
+    foreign_emitters: ForeignEmitter,
     received: Received,
 }
 
@@ -44,8 +47,8 @@ impl WormholeAdapter {
         .map_err(|e| CCIHSError::DeserializationError(e.to_string()))    
     }
 
-    pub fn add_foreign_emitter(&mut self, chain: u16, address: [u8; 32], bump: u8) {
-        self.foreign_emitters.insert(chain, ForeignEmitter { chain, address, bump });
+    pub fn add_foreign_emitter(&mut self, chain: u16, address: [u8; 32]) {
+        self.foreign_emitters.insert(chain, ForeignEmitter { chain, address });
     }
 
     pub fn get_foreign_emitter(&self, chain: u16) -> Option<&ForeignEmitter> {
@@ -314,20 +317,4 @@ pub struct VerifyMessage<'info> {
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
     pub wormhole_program: Program<'info, Wormhole>,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
-pub struct ForeignEmitter {
-    pub chain: u16,
-    pub address: [u8; 32],
-    pub bump: u8,
-}
-
-impl ForeignEmitter {
-    pub const MAXIMUM_SIZE: usize = 8 + 2 + 32 + 1;
-    pub const SEED_PREFIX: &'static [u8; 15] = b"foreign_emitter";
-
-    pub fn verify(&self, address: &[u8; 32]) -> bool {
-        *address == self.address
-    }
 }

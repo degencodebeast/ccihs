@@ -9,7 +9,12 @@
 
 CCIHS (Cross-Chain Interoperability Hooks for Solana) is a cutting-edge Rust library designed to revolutionize cross-chain communication for Solana-based applications. In an increasingly interconnected blockchain ecosystem, CCIHS serves as a crucial transport network interface, enabling seamless interaction between Solana and other blockchain networks.
 
-At its core, CCIHS provides a robust and flexible framework that abstracts the complexities of cross-chain messaging. It leverages Solana's high-performance architecture while offering a standardized interface for interacting with various cross-chain protocols. This approach not only simplifies development but also future-proofs applications against changes in underlying cross-chain technologies.
+### Problem with Cross chain Communication in Solana
+Solana developers face significant challenges when creating applications that need to communicate with other blockchains. The process is complex, time-consuming, and prone to errors, also there is a lack of standardization in cross chain operations, so for instance it is hard to make a Wormhole Solana app interact with a LayerZero Solana app, as there is no unified interface for multiple cross-chain protocols. 
+
+### Solution CCIHS offers
+
+ CCIHS is a Rust-based package that serves as a middleware layer for cross-chain development on Solana. At its core, CCIHS provides a robust and flexible framework that abstracts the complexities of cross-chain messaging. It leverages Solana's high-performance architecture while offering a standardized interface for interacting with various cross-chain protocols. This approach not only simplifies development but also future-proofs applications against changes in underlying cross-chain technologies.
 
 Key aspects of CCIHS include:
 

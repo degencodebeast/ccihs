@@ -5,7 +5,8 @@ use std::collections::{HashSet, HashMap};
 use std::collections::BTreeMap;
 
 #[account]
-#[derive(Default)]
+//#[derive(Default)]
+#[derive(Default, AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub struct WormholeConfig {
     pub owner: Pubkey,
     pub fee: u64,
