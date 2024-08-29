@@ -20,7 +20,7 @@ use wormhole_anchor_sdk::wormhole::{
 use crate::types::{CrossChainMessage, ChainId, CrossChainAddress, CCIHSResult, MessageStatus, HookType};
 use crate::error::CCIHSError;
 use crate::hooks::HookManager;
-use crate::config::WormholeConfig;
+use super::config::WormholeConfig;
 
 pub struct WormholeAdapter {
     pub config: WormholeConfig,
@@ -70,9 +70,9 @@ impl ProtocolAdapter for WormholeAdapter {
                     system_program: ctx.accounts.system_program.to_account_info(),
                 },
             ),
-            message.nonce,
+            config.batch_id,
             payload,
-            message.consistency_level,
+            config.finality.into(),
         )?;
 
         // Execute token bridge transfer
@@ -198,9 +198,8 @@ impl ProtocolAdapter for WormholeAdapter {
 
         Ok(true)
     }
-
     fn supported_chains(&self) -> Vec<ChainId> {
-        self.config.supported_chains.clone()
+        self.config.supported_chains()
     }
 }
 

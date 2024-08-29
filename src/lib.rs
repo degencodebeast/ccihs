@@ -27,5 +27,5 @@ pub use state::*;
 pub use core::CCIHSCore;  // Export CCIHSCore for easy access
 pub use config::CCIHSConfig;  
 pub use api::CCIHSAPI; 
-pub use protocols::*; 
+pub use protocols::*;
 pub use constants::*;
