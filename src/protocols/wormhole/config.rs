@@ -4,49 +4,60 @@ use crate::types::{ChainId, ProtocolType};
 use std::collections::{HashSet, HashMap};
 use std::collections::BTreeMap;
 
+pub struct WormholeAddresses {
+    pub bridge: Pubkey,
+    pub fee_collector: Pubkey,
+    pub sequence: Pubkey,
+}
+
+impl WormholeAddresses {
+    pub const LEN: usize = 32 + 32 + 32;
+}
+
 #[account]
 //#[derive(Default)]
 #[derive(Default, AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub struct WormholeConfig {
     pub owner: Pubkey,
-    pub fee: u64,
-    /// [BridgeData](wormhole_anchor_sdk::wormhole::BridgeData) address.
-    pub wormhole_bridge: Pubkey,
-    /// [FeeCollector](wormhole_anchor_sdk::wormhole::FeeCollector) address.
-    pub wormhole_fee_collector: Pubkey,
-    /// [SequenceTracker](wormhole_anchor_sdk::wormhole::SequenceTracker) address.
-    pub wormhole_sequence: Pubkey,
-    pub wormhole_emitter: Pubkey,
+    pub wormhole: WormholeAddresses,
+    pub batch_id: u32,
+    pub finality: u8,
     pub foreign_emitters: BTreeMap<u16, Pubkey>,
-    //pub foreign_emitters: BTreeMap<u16, ForeignEmitter>,
-    pub bump: u8,
-    supported_chains: HashSet<ChainId>,
-    additional_params: HashMap<String, String>,
+    pub supported_chains: HashSet<ChainId>,
+    pub additional_params: HashMap<String, String>,
 }
 
 impl WormholeConfig {
-    pub const SPACE: usize = 32 + 8 + 32 + 32 + 32 + 32 + 64 + 64 + 1 + 64 + 64;
+  
+    pub const SPACE: usize = 8 // discriminator
+    + 32 // owner
+    + WormholeAddresses::LEN
+    + 4 // batch_id
+    + 1 // finality
+    + 64 // Estimate for foreign_emitters
+    + 64 // Estimate for supported_chains
+    + 64 // Estimate for additional_params
+    ;
 
-    pub const SEED_PREFIX: &'static [u8; 6] = b"wormhole_config";
+    pub const SEED_PREFIX: &'static [u8; 15] = b"wormhole_config";
 
     pub fn new(
         owner: Pubkey,
-        fee: u64,
         wormhole_bridge: Pubkey,
         wormhole_fee_collector: Pubkey,
-        wormhole_emitter: Pubkey,
+        //wormhole_emitter: Pubkey,
         wormhole_sequence: Pubkey,
-        bump: u8,
     ) -> Self {
         Self {
             owner,
-            fee,
-            wormhole_bridge,
-            wormhole_fee_collector,
-            wormhole_emitter,
-            wormhole_sequence,
+            wormhole: WormholeAddresses {
+                bridge: wormhole_bridge,
+                fee_collector: wormhole_fee_collector,
+                sequence: wormhole_sequence,
+            },
+            batch_id: 0,
+            finality: 0,
             foreign_emitters: BTreeMap::new(),
-            bump,
             supported_chains: HashSet::new(),
             additional_params: HashMap::new(),
         }
