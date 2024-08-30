@@ -73,6 +73,46 @@ impl WormholeAdapter {
     pub fn get_received(&self) -> &Received {
         &self.received
     }
+
+    // fn get_emitter_address(&self, program_id: &Pubkey) -> CCIHSResult<Pubkey> {
+    //     let seeds = [b"emitter"];
+    //     let (emitter_address, _) = Pubkey::find_program_address(&seeds, program_id);
+    //     Ok(emitter_address)
+    // }
+
+    // fn get_sequence_address(&self, program_id: &Pubkey, emitter_address: &Pubkey) -> CCIHSResult<Pubkey> {
+    //     let seeds = [b"sequence", emitter_address.as_ref()];
+    //     let (sequence_address, _) = Pubkey::find_program_address(&seeds, program_id);
+    //     Ok(sequence_address)
+    // }
+
+    // pub fn update_config(&mut self, new_config: WormholeConfig) -> CCIHSResult<()> {
+    //     // Perform any necessary validation
+    //     if new_config.fee < self.config.fee {
+    //         return Err(CCIHSError::InvalidConfiguration("Fee cannot be decreased".to_string()));
+    //     }
+    //     self.config = new_config;
+    //     Ok(())
+    // }
+
+    // pub fn get_current_sequence(&self, program_id: &Pubkey) -> CCIHSResult<u64> {
+    //     let emitter_address = self.get_emitter_address(program_id)?;
+    //     let sequence_address = self.get_sequence_address(program_id, &emitter_address)?;
+        
+    //     // Fetch the account data for the sequence address
+    //     // This is a placeholder and should be replaced with actual Solana account data fetching
+    //     let sequence_data = vec![0u8; 8]; // Placeholder
+        
+    //     let sequence = u64::from_le_bytes(sequence_data.try_into().map_err(|_| CCIHSError::InvalidSequenceData)?);
+    //     Ok(sequence)
+    // }
+
+    fn verify_consistency_level(&self, vaa: &PostedVaa) -> CCIHSResult<()> {
+        if vaa.consistency_level() < self.config.consistency_level {
+            return Err(CCIHSError::InvalidConsistencyLevel);
+        }
+        Ok(())
+    }
 }
 
 impl ProtocolAdapter for WormholeAdapter {

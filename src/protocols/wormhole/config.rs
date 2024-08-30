@@ -79,8 +79,12 @@ impl WormholeConfig {
         self.supported_chains.insert(chain_id);
     }
 
-    pub fn add_param(&mut self, key: &str, value: &str) {
+    pub fn set_parameter(&mut self, key: &str, value: &str) {
         self.additional_params.insert(key.to_string(), value.to_string());
+    }
+
+    fn get_parameter(&self, key: &str) -> Option<&str> {
+        self.additional_params.get(key)
     }
 }
 
