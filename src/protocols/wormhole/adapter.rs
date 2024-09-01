@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
 use wormhole_anchor_sdk::token_bridge::{
     program::TokenBridge,
-    cpi::accounts::{CompleteNative, TransferNative},
+    cpi::accounts::{CompleteNative, CompleteTransferNativeWithPayload, TransferNative},
     ConfigAccount as TokenBridgeConfig,
 };
 use wormhole_anchor_sdk::wormhole::{
