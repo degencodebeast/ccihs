@@ -29,7 +29,7 @@ pub struct WormholeConfig {
 
 impl WormholeConfig {
   
-    pub const SPACE: usize = 8 // discriminator
+    pub const MAXIMUM_SIZE: usize = 8 // discriminator
     + 32 // owner
     + WormholeAddresses::LEN
     + 4 // batch_id

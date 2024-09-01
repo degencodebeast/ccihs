@@ -28,15 +28,23 @@ use anchor_lang::prelude::*;
 #[derive(Clone, Debug, PartialEq)]
 //#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct CrossChainMessage {
+    pub message_type: MessageType,
+    pub payload: Vec<u8>,
+    pub amount: u64,
+    pub token_address: Option<Pubkey>,
+    pub sender: CrossChainAddress,
+    pub recipient: CrossChainAddress,
     pub source_chain: ChainId,
     pub destination_chain: ChainId,
-    pub sender: Pubkey,
-    pub recipient: Vec<u8>,
-    pub payload: Vec<u8>,
-    pub nonce: u64,
+    pub nonce: u32,
     pub timestamp: u64,
+    pub consistency_level: u8,
 }
 
+pub enum MessageType {
+    General,
+    TokenTransfer,
+}
 
 #[cfg_attr(feature = "native", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
@@ -57,18 +65,26 @@ impl CrossChainMessage {
         sender: Pubkey,
         recipient: Vec<u8>,
         payload: Vec<u8>,
+        message_type: MessageType,
+        amount: u64,
+        token_address: Option<Pubkey>,
+        consistency_level: u8,
     ) -> Self {
         Self {
-            source_chain,
-            destination_chain,
+            message_type,
+            payload,
+            amount,
+            token_address,
             sender,
             recipient,
-            payload,
+            source_chain,
+            destination_chain,
             nonce: 0, // This should be generated
             timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
+            consistency_level,
         }
     }
 

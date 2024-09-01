@@ -24,6 +24,7 @@ use crate::types::{CrossChainMessage, ChainId, CrossChainAddress, CCIHSResult, M
 use crate::error::CCIHSError;
 use crate::hooks::HookManager;
 use super::config::WormholeConfig;
+use super::instructions::*;
 
 pub struct WormholeAdapter {
     pub config: WormholeConfig,
@@ -35,6 +36,10 @@ pub struct WormholeAdapter {
 impl WormholeAdapter {
     pub fn new(config: WormholeConfig, hook_manager: HookManager) -> Self {
         Self { config, hook_manager, foreign_emitters: BTreeMap::new(), received: Received::default() }
+    }
+
+    pub fn initialize(&self, ctx: Context<Initialize>) -> Result<()> {
+        handle_initialize(ctx)
     }
 
     fn serialize_message(&self, message: &CrossChainMessage) -> Result<Vec<u8>> {
