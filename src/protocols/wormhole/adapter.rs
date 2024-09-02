@@ -38,7 +38,7 @@ impl WormholeAdapter {
         Self { config, hook_manager, foreign_emitters: BTreeMap::new(), received: Received::default() }
     }
 
-    pub fn initialize(&self, ctx: Context<Initialize>) -> Result<()> {
+    pub fn initialize(&self, ctx: Context<ReceiveMessage>) -> Result<()> {
         handle_initialize(ctx)
     }
 
@@ -51,9 +51,8 @@ impl WormholeAdapter {
         wormhole_io::deserialize(payload)
         .map_err(|e| CCIHSError::DeserializationError(e.to_string()))    
     }
-
-    pub fn add_foreign_emitter(&mut self, chain: u16, address: [u8; 32]) {
-        self.foreign_emitters.insert(chain, ForeignEmitter { chain, address });
+    pub fn add_foreign_emitter(&mut self, chain: u16, address: [u8; 32], token_bridge_foreign_endpoint: Option<Pubkey>) {
+        self.foreign_emitters.insert(chain, ForeignEmitter { chain, address, token_bridge_foreign_endpoint });
     }
 
     pub fn get_foreign_emitter(&self, chain: u16) -> Option<&ForeignEmitter> {

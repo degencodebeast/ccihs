@@ -3,7 +3,7 @@ use super::{chain::ChainId, CCIHSResult};
 use anchor_lang::{prelude::Pubkey, AnchorDeserialize, AnchorSerialize};
 use std::io;
 use wormhole_io::Readable;
-
+use wormhole_anchor_sdk::token_bridge;
 
 #[cfg(feature = "native")]
 use borsh::{BorshSerialize, BorshDeserialize};
@@ -11,6 +11,7 @@ use borsh::{BorshSerialize, BorshDeserialize};
 #[cfg(feature = "anchor")]
 use anchor_lang::prelude::*;
 
+//I need to come back to this payload ID
 
 // const PAYLOAD_ID_INITIALIZE: u8 = 0;
 // const PAYLOAD_ID_MESSAGE: u8 = 1;
@@ -148,7 +149,10 @@ impl AnchorDeserialize for CrossChainMessage {
 
     // Add other methods as needed
 }
-    
+
+
+pub type PostedCrossChainMessage = token_bridge::PostedTransferWith<CrossChainMessage>;
+
 #[cfg_attr(feature = "native", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
 #[derive(Clone, Debug, PartialEq)]

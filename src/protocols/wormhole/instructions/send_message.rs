@@ -2,8 +2,8 @@ use anchor_lang::prelude::*;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
 use crate::types::{CrossChainMessage, CCIHSResult};
 use crate::utility::error::CCIHSError;
-use super::{config::WormholeConfig, state::{ForeignEmitter, WormholeEmitter, Received}};
-
+use crate::protocols::wormhole::config::WormholeConfig;
+use crate::protocols::wormhole::state::{ForeignEmitter, WormholeEmitter, Received};
 
 #[derive(Accounts)]
 pub struct SendMessage<'info> {

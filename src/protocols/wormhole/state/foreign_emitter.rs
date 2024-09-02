@@ -8,6 +8,8 @@ pub struct ForeignEmitter {
   pub chain: u16,
   /// Emitter address. Cannot be zero address.
   pub address: [u8; 32],
+  /// Token Bridge program's foreign endpoint account key.
+  pub token_bridge_foreign_endpoint: Option<Pubkey>,
 
   //bump
 }
@@ -16,6 +18,7 @@ impl ForeignEmitter {
     pub const MAXIMUM_SIZE: usize = 8 // discriminator
     + 2 // chain
     + 32 // address
+    + 33 // token_bridge_foreign_endpoint (Option<Pubkey>)
     ;
     /// AKA `b"foreign_emitter"`.
     pub const SEED_PREFIX: &'static [u8; 15] = b"foreign_emitter";
@@ -25,5 +28,11 @@ impl ForeignEmitter {
     pub fn verify(&self, address: &[u8; 32]) -> bool {
         *address == self.address
     }
+
+  //    /// Convenience method to check whether an address equals the one saved in
+  //   /// this account.
+  //   pub fn verify(&self, vaa: &PostedHelloTokenMessage) -> bool {
+  //     vaa.emitter_chain() == self.chain && *vaa.data().from_address() == self.address
+  // }
 }
 

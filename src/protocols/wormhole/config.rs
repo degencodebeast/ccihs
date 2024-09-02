@@ -20,6 +20,7 @@ impl WormholeAddresses {
 pub struct WormholeConfig {
     pub owner: Pubkey,
     pub wormhole: WormholeAddresses,
+    pub token_bridge: Option<Pubkey>,
     pub batch_id: u32,
     pub finality: u8,
     pub foreign_emitters: BTreeMap<u16, Pubkey>,
@@ -47,6 +48,10 @@ impl WormholeConfig {
         wormhole_fee_collector: Pubkey,
         //wormhole_emitter: Pubkey,
         wormhole_sequence: Pubkey,
+        token_bridge: Option<Pubkey>,
+        supported_chains: HashSet<ChainId>,
+        additional_params: HashMap<String, String>,
+        foreign_emitters: BTreeMap<u16, Pubkey>,
     ) -> Self {
         Self {
             owner,
@@ -55,11 +60,12 @@ impl WormholeConfig {
                 fee_collector: wormhole_fee_collector,
                 sequence: wormhole_sequence,
             },
+            token_bridge,
             batch_id: 0,
             finality: 0,
-            foreign_emitters: BTreeMap::new(),
-            supported_chains: HashSet::new(),
-            additional_params: HashMap::new(),
+            foreign_emitters,
+            supported_chains,
+            additional_params,
         }
     }
 
