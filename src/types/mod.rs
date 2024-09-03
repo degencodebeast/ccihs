@@ -9,7 +9,7 @@ mod crosschain_fee;
 mod nonce;
 
 pub use chain::ChainId;
-pub use message::{CrossChainMessage, CrossChainTransaction, MessageStatus};
+pub use message::{CrossChainMessage, CrossChainTransaction, MessageStatus, PostedCrossChainMessage};
 pub use result::{CCIHSResult, CrossChainResult};
 pub use protocol::ProtocolType;
 pub use hook::{HookType, Hook};

@@ -8,8 +8,6 @@ pub struct ForeignEmitter {
   pub chain: u16,
   /// Emitter address. Cannot be zero address.
   pub address: [u8; 32],
-  /// Token Bridge program's foreign endpoint account key.
-  pub token_bridge_foreign_endpoint: Option<Pubkey>,
 
   //bump
 }
@@ -18,7 +16,6 @@ impl ForeignEmitter {
     pub const MAXIMUM_SIZE: usize = 8 // discriminator
     + 2 // chain
     + 32 // address
-    + 33 // token_bridge_foreign_endpoint (Option<Pubkey>)
     ;
     /// AKA `b"foreign_emitter"`.
     pub const SEED_PREFIX: &'static [u8; 15] = b"foreign_emitter";
