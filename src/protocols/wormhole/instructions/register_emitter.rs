@@ -36,7 +36,6 @@ use crate::protocols::wormhole::error::WormholeError;
     Ok(())
 }
 
-
 #[derive(Accounts)]
 #[instruction(chain: u16)]
 pub struct RegisterEmitter<'info> {

@@ -11,6 +11,23 @@ use anchor_spl::{
 };
 use crate::protocols::wormhole::CrossChainMessage;
 
+pub fn update_relayer_fee_handler(
+    ctx: Context<UpdateRelayerFee>,
+    relayer_fee: u32,
+    relayer_fee_precision: u32,
+) -> Result<()> {
+    require!(
+        relayer_fee < relayer_fee_precision,
+        WormholeError::InvalidRelayerFee,
+    );
+    let config = &mut ctx.accounts.config;
+    config.relayer_fee = relayer_fee;
+    config.relayer_fee_precision = relayer_fee_precision;
+
+    // Done.
+    Ok(())
+}
+
 #[derive(Accounts)]
 pub struct UpdateRelayerFee<'info> {
     #[account(mut)]
@@ -19,7 +36,7 @@ pub struct UpdateRelayerFee<'info> {
 
     #[account(
         mut,
-        has_one = owner @ HelloTokenError::OwnerOnly,
+        has_one = owner @ WormholeError::OwnerOnly,
         seeds = [RedeemerConfig::SEED_PREFIX],
         bump
     )]
