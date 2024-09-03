@@ -18,11 +18,11 @@ use anchor_lang::prelude::*;
 
 // pub const MAX_PAYLOAD_LENGTH: usize = 1024;
 
-// #[derive(Clone, Debug, PartialEq)]
-// pub enum CrossChainPayload {
-//     Initialize { program_id: Pubkey },
-//     Message { content: Vec<u8> },
-// }
+#[derive(Clone, Debug, PartialEq)]
+pub enum CrossChainPayload {
+    Initialize { program_id: Pubkey },
+    Message { content: Vec<u8> },
+}
 
 #[cfg_attr(feature = "native", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]

@@ -20,7 +20,8 @@ use wormhole_anchor_sdk::wormhole::{
     VerifySignatures,
 };
 
-use crate::types::{CrossChainMessage, ChainId, CrossChainAddress, CCIHSResult, MessageStatus, HookType};
+use crate::types::{ ChainId, CrossChainAddress, CCIHSResult, MessageStatus, HookType};
+use crate::protocols::wormhole::message::*;
 use crate::error::CCIHSError;
 use crate::hooks::HookManager;
 use super::config::WormholeConfig;
@@ -39,7 +40,15 @@ impl WormholeAdapter {
     }
 
     pub fn initialize(&self, ctx: Context<Initialize>) -> Result<()> {
-        initialize_handler(ctx, self.config.relayer_fee, self.config.relayer_fee_precision)
+        initialize_handler(ctx, self.config.relayer_fee, self.config.relayer_fee_precision)//TODO: Check to know if you need to add the args to WormholeConfig
+    }
+
+    pub fn register_emitter(&self, ctx: Context<RegisterEmitter>, chain: u16, address: [u8; 32]) -> Result<()> {
+        register_emitter_handler(ctx, chain, address)//TODO: Check to know if you need to add the args to WormholeConfig
+    }
+
+    pub fn send_message(&self, ctx: Context<SendMessage>, message: &CrossChainMessage) -> Result<()> {
+        send_message_handler(ctx, message)//TODO: Check to know if you need to add the args to WormholeConfig
     }
 
     fn serialize_message(&self, message: &CrossChainMessage) -> Result<Vec<u8>> {

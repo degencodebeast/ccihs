@@ -1,9 +1,46 @@
 use anchor_lang::prelude::*;
+use solana_program::entrypoint::HEAP_LENGTH;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
 use crate::types::{CrossChainMessage, CCIHSResult};
 use crate::utility::error::CCIHSError;
 use crate::protocols::wormhole::state::{ForeignEmitter, Received};
 use crate::wormhole::GeneralMessageConfig;
+use crate::protocols::wormhole::state::MESSAGE_MAX_LENGTH;
+use crate::protocols::wormhole::WormholeError;
+use crate::MAX_PAYLOAD_SIZE;
+
+
+    /// This instruction reads a posted verified Wormhole message and verifies
+    /// that the payload is of type [HelloWorldMessage::Hello] (payload ID == 1). HelloWorldMessage
+    /// data is stored in a [Received] account.
+    ///
+    /// See [HelloWorldMessage] enum for deserialization implementation.
+    ///
+    /// # Arguments
+    ///
+    /// * `vaa_hash` - Keccak256 hash of verified Wormhole message
+    pub fn receive_message_handler(ctx: Context<ReceiveMessage>, vaa_hash: [u8; 32]) -> Result<()> {
+        let posted_message = &ctx.accounts.posted;
+
+        if let message = &posted_message.payload {
+        // CrossChainMessage payload cannot be larger than the maximum size allowed.
+        require!(
+            message.len() <= MAX_PAYLOAD_SIZE,
+            CCIHSError::PayloadTooLarge
+        );
+
+            // Save batch ID, keccak256 hash and message payload.
+            let received = &mut ctx.accounts.received;
+            received.batch_id = posted_message.batch_id();
+            received.wormhole_message_hash = vaa_hash;
+            received.message = message.clone();
+
+            // Done
+            Ok(())
+        } else {
+            Err(WormholeError::InvalidMessage.into())
+        }
+    }
 
 #[derive(Accounts)]
 #[instruction(vaa_hash: [u8; 32])]
