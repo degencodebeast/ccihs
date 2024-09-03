@@ -1,10 +1,19 @@
 use anchor_lang::prelude::*;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
-use crate::types::{CrossChainMessage, CCIHSResult};
+use crate::types::{CrossChainMessage, CCIHSResult, PostedCrossChainMessage};
 use crate::utility::error::CCIHSError;
 use crate::wormhole::GeneralMessageConfig;
-use crate::protocols::wormhole::state::{ForeignEmitter, WormholeEmitter, Received};
+use crate::wormhole::WormholeError;
+use crate::protocols::wormhole::state::{ForeignEmitter, WormholeEmitter, Received, ForeignTokenEmitter, RedeemerConfig, SenderConfig};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount},
+};
 
+/// AKA `b"bridged"`.
+pub const SEED_PREFIX_BRIDGED: &[u8; 7] = b"bridged";
+/// AKA `b"tmp"`.
+pub const SEED_PREFIX_TMP: &[u8; 3] = b"tmp";
 
 /// AKA `b"general_message_config"`.
 pub const SEED_PREFIX_GENERAL_MESSAGE_CONFIG: &[u8; 18] = b"general_message_config";
@@ -115,18 +124,106 @@ pub struct Initialize<'info> {
     /// as the program's owner.
     pub general_message_config: Account<'info, GeneralMessageConfig>,
 
+    #[account(
+        init,
+        payer = owner,
+        seeds = [SenderConfig::SEED_PREFIX],
+        bump,
+        space = SenderConfig::MAXIMUM_SIZE,
+    )]
+    /// Sender Config account, which saves program data useful for other
+    /// instructions, specifically for outbound transfers. Also saves the payer
+    /// of the [`initialize`](crate::initialize) instruction as the program's
+    /// owner.
+    pub sender_config: Box<Account<'info, SenderConfig>>,
+
+    #[account(
+        init,
+        payer = owner,
+        seeds = [RedeemerConfig::SEED_PREFIX],
+        bump,
+        space = RedeemerConfig::MAXIMUM_SIZE,
+    )]
+    /// Redeemer Config account, which saves program data useful for other
+    /// instructions, specifically for inbound transfers. Also saves the payer
+    /// of the [`initialize`](crate::initialize) instruction as the program's
+    /// owner.
+    pub redeemer_config: Box<Account<'info, RedeemerConfig>>,
+
     /// Wormhole program.
     pub wormhole_program: Program<'info, wormhole::program::Wormhole>,
 
+    /// Token Bridge program.
+    pub token_bridge_program: Program<'info, token_bridge::program::TokenBridge>,
+
+    // #[account(
+    //     mut,
+    //     seeds = [wormhole::BridgeData::SEED_PREFIX],
+    //     bump,
+    //     seeds::program = wormhole_program,
+    // )]
+    // /// Wormhole bridge data account (a.k.a. its config).
+    // /// [`wormhole::post_message`] requires this account be mutable.
+    // pub wormhole_bridge: Account<'info, wormhole::BridgeData>,
+
     #[account(
-        mut,
         seeds = [wormhole::BridgeData::SEED_PREFIX],
         bump,
         seeds::program = wormhole_program,
     )]
     /// Wormhole bridge data account (a.k.a. its config).
-    /// [`wormhole::post_message`] requires this account be mutable.
-    pub wormhole_bridge: Account<'info, wormhole::BridgeData>,
+    pub wormhole_bridge: Box<Account<'info, wormhole::BridgeData>>,
+
+    #[account(
+        seeds = [token_bridge::Config::SEED_PREFIX],
+        bump,
+        seeds::program = token_bridge_program,
+    )]
+    /// Token Bridge config. Token Bridge program needs this account to
+    /// invoke the Wormhole program to post messages. Even though it is a
+    /// required account for redeeming token transfers, it is not actually
+    /// used for completing these transfers.
+    pub token_bridge_config: Account<'info, token_bridge::Config>,
+
+    #[account(
+        seeds = [token_bridge::SEED_PREFIX_AUTHORITY_SIGNER],
+        bump,
+        seeds::program = token_bridge_program,
+    )]
+    /// CHECK: Token Bridge authority signer. This isn't an account that holds
+    /// data; it is purely just a signer for SPL tranfers when it is delegated
+    /// spending approval for the SPL token.
+    pub token_bridge_authority_signer: UncheckedAccount<'info>,
+
+    #[account(
+        seeds = [token_bridge::SEED_PREFIX_CUSTODY_SIGNER],
+        bump,
+        seeds::program = token_bridge_program,
+    )]
+    /// CHECK: Token Bridge custody signer. This isn't an account that holds
+    /// data; it is purely just a signer for Token Bridge SPL tranfers.
+    pub token_bridge_custody_signer: UncheckedAccount<'info>,
+
+
+    #[account(
+        seeds = [token_bridge::SEED_PREFIX_MINT_AUTHORITY],
+        bump,
+        seeds::program = token_bridge_program,
+    )]
+    /// CHECK: Token Bridge mint authority. This isn't an account that holds
+    /// data; it is purely just a signer (SPL mint authority) for Token Bridge
+    /// wrapped assets.
+    pub token_bridge_mint_authority: UncheckedAccount<'info>,
+
+    #[account(
+        seeds = [token_bridge::SEED_PREFIX_EMITTER],
+        bump,
+        seeds::program = token_bridge_program
+    )]
+    /// CHECK: Token Bridge program's emitter account. This isn't an account
+    /// that holds data; it is purely just a signer for posting Wormhole
+    /// messages on behalf of the Token Bridge program.
+    pub token_bridge_emitter: UncheckedAccount<'info>,
 
     #[account(
         mut,
@@ -165,6 +262,19 @@ pub struct Initialize<'info> {
     /// [`initialize`](crate::initialize) instruction.
     /// [`wormhole::post_message`] requires this account be mutable.
     pub wormhole_sequence: UncheckedAccount<'info>,
+
+    #[account(
+        seeds = [
+            wormhole::SequenceTracker::SEED_PREFIX,
+            token_bridge_emitter.key().as_ref()
+        ],
+        bump,
+        seeds::program = wormhole_program
+    )]
+    /// Token Bridge emitter's sequence account. Like with all Wormhole
+    /// emitters, this account keeps track of the sequence number of the last
+    /// posted message.
+    pub token_bridge_sequence: Account<'info, wormhole::SequenceTracker>,
 
     #[account(
         mut,
