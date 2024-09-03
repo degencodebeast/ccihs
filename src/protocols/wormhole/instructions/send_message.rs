@@ -4,6 +4,11 @@ use crate::types::{CrossChainMessage, CCIHSResult};
 use crate::utility::error::CCIHSError;
 use crate::protocols::wormhole::config::WormholeConfig;
 use crate::protocols::wormhole::state::{ForeignEmitter, WormholeEmitter, Received};
+use crate::wormhole::GeneralMessageConfig;
+
+
+/// AKA `b"sent"`.
+pub const SEED_PREFIX_SENT: &[u8; 4] = b"sent";
 
 #[derive(Accounts)]
 pub struct SendMessage<'info> {
@@ -12,19 +17,19 @@ pub struct SendMessage<'info> {
     pub payer: Signer<'info>,
 
     #[account(
-        seeds = [WormholeConfig::SEED_PREFIX],
+        seeds = [GeneralMessageConfig::SEED_PREFIX],
         bump,
     )]
     /// Config account. Wormhole PDAs specified in the config are checked
     /// against the Wormhole accounts in this context. Read-only.
-    pub config: Account<'info, WormholeConfig>,
+    pub general_message_config: Account<'info, GeneralMessageConfig>,
 
     /// Wormhole program.
     pub wormhole_program: Program<'info, wormhole::program::Wormhole>,
 
     #[account(
         mut,
-        address = config.wormhole.bridge, //@ HelloWorldError::InvalidWormholeConfig
+        address = general_message_config.wormhole.bridge, //@ HelloWorldError::InvalidWormholeConfig
     )]
     /// Wormhole bridge data. [`wormhole::post_message`] requires this account
     /// be mutable.
@@ -32,7 +37,7 @@ pub struct SendMessage<'info> {
 
     #[account(
         mut,
-        address = config.wormhole.fee_collector, //@ HelloWorldError::InvalidWormholeFeeCollector
+        address = general_message_config.wormhole.fee_collector, //@ HelloWorldError::InvalidWormholeFeeCollector
     )]
     /// Wormhole fee collector. [`wormhole::post_message`] requires this
     /// account be mutable.
@@ -47,7 +52,7 @@ pub struct SendMessage<'info> {
 
     #[account(
         mut,
-        address = config.wormhole.sequence, //@ HelloWorldError::InvalidWormholeSequence
+        address = general_message_config.wormhole.sequence, //@ HelloWorldError::InvalidWormholeSequence
     )]
     /// Emitter's sequence account. [`wormhole::post_message`] requires this
     /// account be mutable.

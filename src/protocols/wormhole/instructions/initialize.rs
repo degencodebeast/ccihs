@@ -2,11 +2,12 @@ use anchor_lang::prelude::*;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
 use crate::types::{CrossChainMessage, CCIHSResult};
 use crate::utility::error::CCIHSError;
-use crate::protocols::wormhole::config::WormholeConfig;
+use crate::protocols::wormhole::state::general_message_config::GeneralMessageConfig;
 use crate::protocols::wormhole::state::{ForeignEmitter, WormholeEmitter, Received};
 
-/// AKA `b"sent"`.
-pub const SEED_PREFIX_SENT: &[u8; 4] = b"sent";
+
+/// AKA `b"general_message_config"`.
+pub const SEED_PREFIX_GENERAL_MESSAGE_CONFIG: &[u8; 18] = b"general_message_config";
 
 pub fn initialize_handler(ctx: Context<Initialize>) -> Result<()> {
     let config = &mut ctx.accounts.config;
@@ -97,22 +98,22 @@ pub fn initialize_handler(ctx: Context<Initialize>) -> Result<()> {
 /// Context used to initialize program data (i.e. config).
 pub struct Initialize<'info> {
     #[account(mut)]
-    /// Whoever initializes the config will be the owner of the program. Signer
-    /// for creating the [`Config`] account and posting a Wormhole message
+    /// Whoever initializes the configs will be the owner of the program. Signer
+    /// for creating the [`Config`] accounts and posting a Wormhole message and token transfers
     /// indicating that the program is alive.
     pub owner: Signer<'info>,
 
     #[account(
         init,
         payer = owner,
-        seeds = [WormholeConfig::SEED_PREFIX],
+        seeds = [GeneralMessageConfig::SEED_PREFIX],
         bump,
-        space = WormholeConfig::MAXIMUM_SIZE,
+        space = GeneralMessageConfig::MAXIMUM_SIZE,
     )]
-    /// Config account, which saves program data useful for other instructions.
+    /// General message config account, which saves program data useful for other instructions.
     /// Also saves the payer of the [`initialize`](crate::initialize) instruction
     /// as the program's owner.
-    pub config: Account<'info, WormholeConfig>,
+    pub general_message_config: Account<'info, GeneralMessageConfig>,
 
     /// Wormhole program.
     pub wormhole_program: Program<'info, wormhole::program::Wormhole>,

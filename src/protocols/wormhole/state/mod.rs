@@ -1,10 +1,17 @@
 mod foreign_emitter;
 mod received;
 mod wormhole_emitter;
+mod general_message_config;
+mod token_sender_config;
+mod token_redeemer_config;
 
 pub use foreign_emitter::ForeignEmitter;
 pub use received::{Received, MESSAGE_MAX_LENGTH};
 pub use wormhole_emitter::WormholeEmitter;
+pub use general_message_config::GeneralMessageConfig; 
+pub use token_sender_config::SenderConfig;
+pub use token_redeemer_config::RedeemerConfig;
+
 
 // This approach provides a balance between convenience and control.
 // We explicitly re-export the main structs and important constants,

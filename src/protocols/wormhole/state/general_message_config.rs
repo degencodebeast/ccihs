@@ -11,36 +11,39 @@ pub struct WormholeAddresses {
 }
 
 impl WormholeAddresses {
-    pub const LEN: usize = 32 + 32 + 32;
+    pub const LEN: usize =
+          32 // config
+        + 32 // fee_collector
+        + 32 // sequence
+    ;
 }
 
 #[account]
 //#[derive(Default)]
 #[derive(Default, AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
-pub struct WormholeConfig {
+pub struct GeneralMessageConfig {
+    /// Program's owner.
     pub owner: Pubkey,
+    /// Wormhole program's relevant addresses.
     pub wormhole: WormholeAddresses,
-    pub token_bridge: Option<Pubkey>,
+    /// AKA nonce. Just zero, but saving this information in this account
+    /// anyway.
     pub batch_id: u32,
+    /// AKA consistency level. u8 representation of Solana's
+    /// [Finality](wormhole_anchor_sdk::wormhole::Finality).
     pub finality: u8,
-    pub foreign_emitters: BTreeMap<u16, Pubkey>,
-    pub supported_chains: HashSet<ChainId>,
-    pub additional_params: HashMap<String, String>,
 }
 
-impl WormholeConfig {
+impl GeneralMessageConfig {
   
     pub const MAXIMUM_SIZE: usize = 8 // discriminator
-    + 32 // owner
-    + WormholeAddresses::LEN
-    + 4 // batch_id
-    + 1 // finality
-    + 64 // Estimate for foreign_emitters
-    + 64 // Estimate for supported_chains
-    + 64 // Estimate for additional_params
+        + 32 // owner
+        + WormholeAddresses::LEN
+        + 4 // batch_id
+        + 1 // finality
     ;
 
-    pub const SEED_PREFIX: &'static [u8; 15] = b"wormhole_config";
+    pub const SEED_PREFIX: &'static [u8; 15] = b"general_message_config";
 
     pub fn new(
         owner: Pubkey,
@@ -60,12 +63,8 @@ impl WormholeConfig {
                 fee_collector: wormhole_fee_collector,
                 sequence: wormhole_sequence,
             },
-            token_bridge,
             batch_id: 0,
-            finality: 0,
-            foreign_emitters,
-            supported_chains,
-            additional_params,
+            finality: 0
         }
     }
 

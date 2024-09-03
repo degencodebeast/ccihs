@@ -2,8 +2,8 @@ use anchor_lang::prelude::*;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
 use crate::types::{CrossChainMessage, CCIHSResult};
 use crate::utility::error::CCIHSError;
-use crate::protocols::wormhole::config::WormholeConfig;
 use crate::protocols::wormhole::state::{ForeignEmitter, Received};
+use crate::wormhole::GeneralMessageConfig;
 
 #[derive(Accounts)]
 #[instruction(vaa_hash: [u8; 32])]
@@ -13,12 +13,12 @@ pub struct ReceiveMessage<'info> {
     pub payer: Signer<'info>,
 
     #[account(
-        seeds = [WormholeConfig::SEED_PREFIX],
+        seeds = [GeneralMessageConfig::SEED_PREFIX],
         bump,
     )]
     /// Config account. Wormhole PDAs specified in the config are checked
     /// against the Wormhole accounts in this context. Read-only.
-    pub config: Account<'info, WormholeConfig>,
+    pub general_message_config: Account<'info, GeneralMessageConfig>,
 
     // Wormhole program.
     pub wormhole_program: Program<'info, wormhole::program::Wormhole>,

@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
 use crate::types::{CrossChainMessage, CCIHSResult};
 use crate::utility::error::CCIHSError;
-use crate::protocols::wormhole::config::WormholeConfig;
+use crate::protocols::wormhole::state::general_message_config::GeneralMessageConfig;
 use crate::protocols::wormhole::state::{ForeignEmitter, WormholeEmitter, Received};
 
 #[derive(Accounts)]
@@ -15,12 +15,12 @@ pub struct RegisterEmitter<'info> {
 
     #[account(
         has_one = owner, //@ HelloWorldError::OwnerOnly,
-        seeds = [WormholeConfig::SEED_PREFIX],
+        seeds = [GeneralMessageConfig::SEED_PREFIX],
         bump
     )]
     /// Config account. This program requires that the `owner` specified in the
     /// context equals the pubkey specified in this account. Read-only.
-    pub config: Account<'info, WormholeConfig>,
+    pub general_message_config: Account<'info, GeneralMessageConfig>,
 
     #[account(
         init_if_needed,
