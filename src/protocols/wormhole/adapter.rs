@@ -27,7 +27,7 @@ use super::config::WormholeConfig;
 use super::instructions::*;
 
 pub struct WormholeAdapter {
-    pub config: WormholeConfig,
+    pub config: WormholeConfig, //I still need to setup WormholeConfig
     hook_manager: HookManager,
     foreign_emitters: ForeignEmitter,
     received: Received,
@@ -38,8 +38,8 @@ impl WormholeAdapter {
         Self { config, hook_manager, foreign_emitters: BTreeMap::new(), received: Received::default() }
     }
 
-    pub fn initialize(&self, ctx: Context<ReceiveMessage>) -> Result<()> {
-        handle_initialize(ctx)
+    pub fn initialize(&self, ctx: Context<Initialize>) -> Result<()> {
+        initialize_handler(ctx, self.config.relayer_fee, self.config.relayer_fee_precision)
     }
 
     fn serialize_message(&self, message: &CrossChainMessage) -> Result<Vec<u8>> {

@@ -18,15 +18,21 @@ pub const SEED_PREFIX_TMP: &[u8; 3] = b"tmp";
 /// AKA `b"general_message_config"`.
 pub const SEED_PREFIX_GENERAL_MESSAGE_CONFIG: &[u8; 18] = b"general_message_config";
 
-pub fn initialize_handler(ctx: Context<Initialize>) -> Result<()> {
-    let config = &mut ctx.accounts.config;
+pub fn initialize_handler(ctx: Context<Initialize>, relayer_fee: u64, relayer_fee_precision: u32) -> Result<()> {
+    
+    require!(
+        relayer_fee < relayer_fee_precision,
+        WormholeError::InvalidRelayerFee,
+    );
+
+    let general_message_config = &mut ctx.accounts.general_message_config;
 
     // Set the owner of the config
-    config.owner = ctx.accounts.owner.key();
+    general_message_config.owner = ctx.accounts.owner.key();
 
     // Set Wormhole related addresses.
     {
-        let wormhole = &mut config.wormhole;
+        let wormhole = &mut general_message_config.wormhole;
 
         // wormhole::BridgeData (Wormhole's program data).
         wormhole.bridge = ctx.accounts.wormhole_bridge.key();
@@ -41,8 +47,8 @@ pub fn initialize_handler(ctx: Context<Initialize>) -> Result<()> {
     }
 
     // Set default values
-    config.batch_id = 0;
-    config.finality = wormhole::Finality::Confirmed as u8;
+    general_message_config.batch_id = 0;
+    general_message_config.finality = wormhole::Finality::Confirmed as u8;
 
     // Initialize our Wormhole emitter account. It is not required by the
     // Wormhole program that there is an actual account associated with the
@@ -52,6 +58,44 @@ pub fn initialize_handler(ctx: Context<Initialize>) -> Result<()> {
     // But for fun, we will store our emitter's bump for convenience.
     // Initialize Wormhole emitter account
     ctx.accounts.wormhole_emitter.bump = *ctx.bumps.get("wormhole_emitter").unwrap();
+
+    // Initialize program's sender config
+    let sender_config = &mut ctx.accounts.sender_config;
+
+    // Set the owner of the sender config (effectively the owner of the
+    // program).
+    sender_config.owner = ctx.accounts.owner.key();
+    sender_config.bump = ctx.bumps.sender_config;
+
+      // Set Token Bridge related addresses.
+      {
+        let token_bridge = &mut sender_config.token_bridge;
+        token_bridge.config = ctx.accounts.token_bridge_config.key();
+        token_bridge.authority_signer = ctx.accounts.token_bridge_authority_signer.key();
+        token_bridge.custody_signer = ctx.accounts.token_bridge_custody_signer.key();
+        token_bridge.emitter = ctx.accounts.token_bridge_emitter.key();
+        token_bridge.sequence = ctx.accounts.token_bridge_sequence.key();
+        token_bridge.wormhole_bridge = ctx.accounts.wormhole_bridge.key();
+        token_bridge.wormhole_fee_collector = ctx.accounts.wormhole_fee_collector.key();
+    }
+
+    // Initialize program's redeemer config
+    let redeemer_config = &mut ctx.accounts.redeemer_config;
+
+    // Set the owner of the redeemer config (effectively the owner of the
+    // program).
+    redeemer_config.owner = ctx.accounts.owner.key();
+    redeemer_config.bump = ctx.bumps.redeemer_config;
+    redeemer_config.relayer_fee = relayer_fee;
+    redeemer_config.relayer_fee_precision = relayer_fee_precision;
+
+    // Set Token Bridge related addresses.
+    {
+        let token_bridge = &mut redeemer_config.token_bridge;
+        token_bridge.config = ctx.accounts.token_bridge_config.key();
+        token_bridge.custody_signer = ctx.accounts.token_bridge_custody_signer.key();
+        token_bridge.mint_authority = ctx.accounts.token_bridge_mint_authority.key();
+    }
 
     // Post initial Wormhole message
     let fee = ctx.accounts.wormhole_bridge.fee();
@@ -95,9 +139,9 @@ pub fn initialize_handler(ctx: Context<Initialize>) -> Result<()> {
                 &[wormhole::SEED_PREFIX_EMITTER, &[wormhole_emitter.bump]],
             ],
         ),
-        config.batch_id,
+        general_message_config.batch_id,
         payload,
-        config.finality.try_into().unwrap(),
+        general_message_config.finality.try_into().unwrap(),
     )?;
 
     Ok(())
