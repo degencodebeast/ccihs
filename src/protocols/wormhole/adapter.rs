@@ -51,6 +51,10 @@ impl WormholeAdapter {
         send_message_handler(ctx, message)//TODO: Check to know if you need to add the args to WormholeConfig
     }
 
+    pub fn receive_message(&self, ctx: Context<ReceiveMessage>, vaa_hash: [u8; 32]) -> Result<()> {
+        receive_message_handler(ctx, vaa_hash)//TODO: Check to know if you need to add the args to WormholeConfig
+    }
+
     fn serialize_message(&self, message: &CrossChainMessage) -> Result<Vec<u8>> {
         wormhole_io::serialize(message)
         .map_err(|e| CCIHSError::SerializationError(e.to_string()))
