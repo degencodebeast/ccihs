@@ -9,7 +9,6 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use crate::protocols::wormhole::CrossChainMessage;
 
 pub fn update_relayer_fee_handler(
     ctx: Context<UpdateRelayerFee>,

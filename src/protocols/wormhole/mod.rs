@@ -8,4 +8,4 @@ pub use adapter::WormholeAdapter;
 pub use state::*;
 pub use error::WormholeError;
 pub use instructions::*;
-pub use message::*;
+pub use message::{WormholeCrossChainMessage, MessageType, PostedWormholeCrossChainMessage};

@@ -35,18 +35,18 @@ pub enum CrossChainPayload {
 #[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
 #[derive(Clone, Debug, PartialEq)]
 //#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
-pub struct CrossChainMessage {
+pub struct WormholeCrossChainMessage {
     pub message_type: MessageType,
     pub payload: Vec<u8>,
     pub amount: u64,
     pub token_address: Option<Pubkey>,
-    pub sender: CrossChainAddress,
-    pub recipient: CrossChainAddress,
-    pub source_chain: ChainId,
-    pub destination_chain: ChainId,
+    //pub sender: CrossChainAddress,
+    pub recipient: Option<Vec<u8>>,
+    //pub source_chain: ChainId,
+    pub destination_chain: Option<ChainId>,
     pub nonce: u32,
     pub timestamp: u64,
-    pub consistency_level: u8,
+    //pub consistency_level: u8,
 }
 
 pub enum MessageType {
@@ -66,12 +66,12 @@ pub enum MessageStatus {
     Failed,
 }
 
-impl CrossChainMessage {
+impl WormholeCrossChainMessage {
     pub fn new(
         source_chain: ChainId,
         destination_chain: ChainId,
         sender: Pubkey,
-        recipient: Vec<u8>,
+        recipient: Option<Vec<u8>>,
         payload: Vec<u8>,
         message_type: MessageType,
         amount: u64,
@@ -83,16 +83,16 @@ impl CrossChainMessage {
             payload,
             amount,
             token_address,
-            sender,
+            //sender,
             recipient,
-            source_chain,
+            //source_chain,
             destination_chain,
             nonce: 0, // This should be generated
             timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-            consistency_level,
+           // consistency_level,
         }
     }
 
@@ -150,7 +150,7 @@ impl CrossChainMessage {
 //     }
 // }
 
-    impl AnchorSerialize for CrossChainMessage {
+    impl AnchorSerialize for WormholeCrossChainMessage {
         fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
             // Serialize message type
             match self.message_type {
@@ -187,7 +187,7 @@ impl CrossChainMessage {
         }
     }
 
-    impl AnchorDeserialize for CrossChainMessage {
+    impl AnchorDeserialize for WormholeCrossChainMessage {
         fn deserialize(buf: &mut &[u8]) -> io::Result<Self> {
             let message_type = match u8::deserialize(buf)? {
                 0 => MessageType::General,
@@ -230,14 +230,14 @@ impl CrossChainMessage {
 }
 
 
-pub type PostedCrossChainMessage = token_bridge::PostedTransferWith<CrossChainMessage>;
+pub type PostedWormholeCrossChainMessage = token_bridge::PostedTransferWith<WormholeCrossChainMessage>;
 
 #[cfg_attr(feature = "native", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "anchor", derive(AnchorSerialize, AnchorDeserialize))]
 #[derive(Clone, Debug, PartialEq)]
 //#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct CrossChainTransaction {
-    pub message: CrossChainMessage,
+    pub message: WormholeCrossChainMessage,
     pub status: MessageStatus,
     pub transaction_hash: Option<[u8; 32]>,
 }

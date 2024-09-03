@@ -1,9 +1,10 @@
 use anchor_lang::prelude::*;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
-use crate::types::{CrossChainMessage, CCIHSResult};
+use crate::types::CCIHSResult;
 use crate::utility::error::CCIHSError;
 use crate::protocols::wormhole::state::{GeneralMessageConfig, WormholeEmitter};
 use crate::protocols::wormhole::error::WormholeError;
+use crate::protocols::wormhole::{MessageType, WormholeCrossChainMessage};
 
  /// This instruction posts a Wormhole message of some arbitrary size
     /// in the form of bytes ([Vec<u8>]). The message is encoded as
@@ -58,7 +59,22 @@ use crate::protocols::wormhole::error::WormholeError;
 
         // There is only one type of message that this example uses to
         // communicate with its foreign counterparts (payload ID == 1).
-        let payload: Vec<u8> = CrossChainMessage::payload.try_to_vec()?;
+        //let payload: Vec<u8> = CrossChainMessage::payload.try_to_vec()?;
+
+        let payload = WormholeCrossChainMessage {
+            payload: message,
+            message_type: MessageType::General,
+            amount: 0, // Set appropriate value or pass as parameter
+            token_address: None, // Set appropriate value or pass as parameter
+            //sender: ctx.accounts.payer.key(), // Assuming payer is the sender
+            recipient: None, // Set appropriate value or pass as parameter
+            //source_chain: 1, // Set appropriate value for Solana
+            destination_chain: None, // Set appropriate value or pass as parameter
+            nonce: general_message_config.batch_id, // Set appropriate value or generate
+            timestamp: Clock::get()?.unix_timestamp,
+            //consistency_level: general_message_config.finality.try_into().unwrap(),
+        };
+
 
         wormhole::post_message(
             CpiContext::new_with_signer(
@@ -115,7 +131,7 @@ pub struct SendMessage<'info> {
 
     #[account(
         mut,
-        address = general_message_config.wormhole.bridge, //@ HelloWorldError::InvalidWormholeConfig
+        address = general_message_config.wormhole.bridge @ WormholeError::InvalidWormholeConfig
     )]
     /// Wormhole bridge data. [`wormhole::post_message`] requires this account
     /// be mutable.
@@ -123,7 +139,7 @@ pub struct SendMessage<'info> {
 
     #[account(
         mut,
-        address = general_message_config.wormhole.fee_collector, //@ HelloWorldError::InvalidWormholeFeeCollector
+        address = general_message_config.wormhole.fee_collector @ WormholeError::InvalidWormholeFeeCollector
     )]
     /// Wormhole fee collector. [`wormhole::post_message`] requires this
     /// account be mutable.
@@ -138,7 +154,7 @@ pub struct SendMessage<'info> {
 
     #[account(
         mut,
-        address = general_message_config.wormhole.sequence, //@ HelloWorldError::InvalidWormholeSequence
+        address = general_message_config.wormhole.sequence @ WormholeError::InvalidWormholeSequence
     )]
     /// Emitter's sequence account. [`wormhole::post_message`] requires this
     /// account be mutable.

@@ -9,8 +9,6 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use crate::protocols::wormhole::CrossChainMessage;
-
 
 /// This instruction registers a new foreign contract (from another
     /// network) and saves the emitter information in a ForeignEmitter account.

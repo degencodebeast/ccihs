@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use wormhole_anchor_sdk::{wormhole, token_bridge};
-use crate::types::{CrossChainMessage, CCIHSResult};
+use crate::types::CCIHSResult;
 use crate::utility::error::CCIHSError;
 use crate::protocols::wormhole::state::{GeneralMessageConfig, ForeignEmitter};
 use crate::protocols::wormhole::error::WormholeError;

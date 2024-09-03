@@ -9,7 +9,156 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use crate::protocols::wormhole::CrossChainMessage;
+use crate::protocols::wormhole::WormholeCrossChainMessage;
+
+/// AKA `b"bridged"`.
+pub const SEED_PREFIX_BRIDGED: &[u8; 7] = b"bridged";
+/// AKA `b"tmp"`.
+pub const SEED_PREFIX_TMP: &[u8; 3] = b"tmp";
+
+pub fn send_native_tokens_with_payload(
+    ctx: Context<SendNativeTokensWithPayload>,
+    batch_id: u32,
+    amount: u64,
+    recipient_address: [u8; 32],
+    recipient_chain: u16,
+    message: WormholeCrossChainMessage,
+    content: Vec<u8>,
+) -> Result<()> {
+    // Token Bridge program truncates amounts to 8 decimals, so there will
+    // be a residual amount if decimals of SPL is >8. We need to take into
+    // account how much will actually be bridged.
+    let truncated_amount = token_bridge::truncate_amount(amount, ctx.accounts.mint.decimals);
+    require!(truncated_amount > 0, WormholeError::ZeroBridgeAmount);
+    if truncated_amount != amount {
+        msg!(
+            "SendNativeTokensWithPayload :: truncating amount {} to {}",
+            amount,
+            truncated_amount
+        );
+    }
+
+    require!(
+        recipient_chain > 0
+            && recipient_chain != wormhole::CHAIN_ID_SOLANA
+            && !recipient_address.iter().all(|&x| x == 0),
+        WormholeError::InvalidRecipient,
+    );
+
+    // These seeds are used to:
+    // 1.  Sign the Sender Config's token account to delegate approval
+    //     of truncated_amount.
+    // 2.  Sign Token Bridge program's transfer_native instruction.
+    // 3.  Close tmp_token_account.
+    let config_seeds = &[
+        SenderConfig::SEED_PREFIX.as_ref(),
+        &[ctx.accounts.config.bump],
+    ];
+
+    // First transfer tokens from payer to tmp_token_account.
+    anchor_spl::token::transfer(
+        CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            anchor_spl::token::Transfer {
+                from: ctx.accounts.from_token_account.to_account_info(),
+                to: ctx.accounts.tmp_token_account.to_account_info(),
+                authority: ctx.accounts.payer.to_account_info(),
+            },
+        ),
+        truncated_amount,
+    )?;
+
+    // Delegate spending to Token Bridge program's authority signer.
+    anchor_spl::token::approve(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            anchor_spl::token::Approve {
+                to: ctx.accounts.tmp_token_account.to_account_info(),
+                delegate: ctx.accounts.token_bridge_authority_signer.to_account_info(),
+                authority: ctx.accounts.config.to_account_info(),
+            },
+            &[&config_seeds[..]],
+        ),
+        truncated_amount,
+    )?;
+
+    // Serialize CrossChainMessage as encoded payload for Token Bridge
+    // transfer.
+    // let payload = CrossChainMessage::Hello {
+    //     recipient: recipient_address,
+    // }
+    // .try_to_vec()?;
+
+    // Serialize CrossChainMessage as encoded payload for Token Bridge transfer.
+let payload = WormholeCrossChainMessage {
+    message_type: MessageType::TokenTransfer, // Assuming you have this enum variant
+    payload: content, // If you need additional payload data
+    amount: truncated_amount,
+    token_address: Some(ctx.accounts.mint.key()),
+    //sender: CrossChainAddress::Solana(ctx.accounts.payer.key()),
+    recipient: Some(recipient_address),
+    //source_chain: ChainId::Solana, // Assuming you have this defined
+    destination_chain: Some(recipient_chain),
+    nonce: batch_id,
+    timestamp: ctx.accounts.clock.unix_timestamp as u64,
+    //consistency_level: ctx.accounts.wormhole_bridge.config.finality,
+}.try_to_vec()?;
+
+    // Bridge native token with encoded payload.
+    token_bridge::transfer_native_with_payload(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_bridge_program.to_account_info(),
+            token_bridge::TransferNativeWithPayload {
+                payer: ctx.accounts.payer.to_account_info(),
+                config: ctx.accounts.token_bridge_config.to_account_info(),
+                from: ctx.accounts.tmp_token_account.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                custody: ctx.accounts.token_bridge_custody.to_account_info(),
+                authority_signer: ctx.accounts.token_bridge_authority_signer.to_account_info(),
+                custody_signer: ctx.accounts.token_bridge_custody_signer.to_account_info(),
+                wormhole_bridge: ctx.accounts.wormhole_bridge.to_account_info(),
+                wormhole_message: ctx.accounts.wormhole_message.to_account_info(),
+                wormhole_emitter: ctx.accounts.token_bridge_emitter.to_account_info(),
+                wormhole_sequence: ctx.accounts.token_bridge_sequence.to_account_info(),
+                wormhole_fee_collector: ctx.accounts.wormhole_fee_collector.to_account_info(),
+                clock: ctx.accounts.clock.to_account_info(),
+                sender: ctx.accounts.config.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                token_program: ctx.accounts.token_program.to_account_info(),
+                wormhole_program: ctx.accounts.wormhole_program.to_account_info(),
+            },
+            &[
+                &config_seeds[..],
+                &[
+                    SEED_PREFIX_BRIDGED,
+                    &ctx.accounts
+                        .token_bridge_sequence
+                        .next_value()
+                        .to_le_bytes()[..],
+                    &[ctx.bumps.wormhole_message],
+                ],
+            ],
+        ),
+        batch_id,
+        truncated_amount,
+        ctx.accounts.foreign_contract.address,
+        recipient_chain,
+        payload,
+        &ctx.program_id.key(),
+    )?;
+
+    // Finish instruction by closing tmp_token_account.
+    anchor_spl::token::close_account(CpiContext::new_with_signer(
+        ctx.accounts.token_program.to_account_info(),
+        anchor_spl::token::CloseAccount {
+            account: ctx.accounts.tmp_token_account.to_account_info(),
+            destination: ctx.accounts.payer.to_account_info(),
+            authority: ctx.accounts.config.to_account_info(),
+        },
+        &[&config_seeds[..]],
+    ))
+}
 
 
 #[derive(Accounts)]
@@ -35,7 +184,7 @@ pub struct SendNativeTokensWithPayload<'info> {
 
     #[account(
         seeds = [
-            ForeignContract::SEED_PREFIX,
+            ForeignTokenEmitter::SEED_PREFIX,
             &recipient_chain.to_le_bytes()[..]
         ],
         bump,
@@ -45,7 +194,7 @@ pub struct SendNativeTokensWithPayload<'info> {
     /// requirements for outbound transfers for the recipient chain to be
     /// registered. This account provides extra protection against sending
     /// tokens to an unregistered Wormhole chain ID. Read-only.
-    pub foreign_contract: Box<Account<'info, ForeignContract>>,
+    pub foreign_contract: Box<Account<'info, ForeignTokenEmitter>>,
 
     #[account(mut)]
     /// Mint info. This is the SPL token that will be bridged over to the
@@ -85,7 +234,7 @@ pub struct SendNativeTokensWithPayload<'info> {
     pub token_bridge_program: Program<'info, token_bridge::program::TokenBridge>,
 
     #[account(
-        address = config.token_bridge.config @ HelloTokenError::InvalidTokenBridgeConfig
+        address = config.token_bridge.config @ WormholeError::InvalidTokenBridgeConfig
     )]
     /// Token Bridge config. Read-only.
     pub token_bridge_config: Account<'info, token_bridge::Config>,
@@ -103,20 +252,20 @@ pub struct SendNativeTokensWithPayload<'info> {
     pub token_bridge_custody: UncheckedAccount<'info>,
 
     #[account(
-        address = config.token_bridge.authority_signer @ HelloTokenError::InvalidTokenBridgeAuthoritySigner
+        address = config.token_bridge.authority_signer @ WormholeError::InvalidTokenBridgeAuthoritySigner
     )]
     /// CHECK: Token Bridge authority signer. Read-only.
     pub token_bridge_authority_signer: UncheckedAccount<'info>,
 
     #[account(
-        address = config.token_bridge.custody_signer @ HelloTokenError::InvalidTokenBridgeCustodySigner
+        address = config.token_bridge.custody_signer @ WormholeError::InvalidTokenBridgeCustodySigner
     )]
     /// CHECK: Token Bridge custody signer. Read-only.
     pub token_bridge_custody_signer: UncheckedAccount<'info>,
 
     #[account(
         mut,
-        address = config.token_bridge.wormhole_bridge @ HelloTokenError::InvalidWormholeBridge,
+        address = config.token_bridge.wormhole_bridge @ WormholeError::InvalidWormholeConfig,
     )]
     /// Wormhole bridge data. Mutable.
     pub wormhole_bridge: Box<Account<'info, wormhole::BridgeData>>,
@@ -135,21 +284,21 @@ pub struct SendNativeTokensWithPayload<'info> {
 
     #[account(
         mut,
-        address = config.token_bridge.emitter @ HelloTokenError::InvalidTokenBridgeEmitter
+        address = config.token_bridge.emitter @ WormholeError::InvalidTokenBridgeEmitter
     )]
     /// CHECK: Token Bridge emitter. Read-only.
     pub token_bridge_emitter: UncheckedAccount<'info>,
 
     #[account(
         mut,
-        address = config.token_bridge.sequence @ HelloTokenError::InvalidTokenBridgeSequence
+        address = config.token_bridge.sequence @ WormholeError::InvalidTokenBridgeSequence
     )]
     /// CHECK: Token Bridge sequence. Mutable.
     pub token_bridge_sequence: Account<'info, wormhole::SequenceTracker>,
 
     #[account(
         mut,
-        address = config.token_bridge.wormhole_fee_collector @ HelloTokenError::InvalidWormholeFeeCollector
+        address = config.token_bridge.wormhole_fee_collector @ WormholeError::InvalidWormholeFeeCollector
     )]
     /// Wormhole fee collector. Mutable.
     pub wormhole_fee_collector: Account<'info, wormhole::FeeCollector>,

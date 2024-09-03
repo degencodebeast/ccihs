@@ -9,7 +9,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use crate::protocols::wormhole::CrossChainMessage;
+use crate::protocols::wormhole::WormholeCrossChainMessage;
 
 
 #[derive(Accounts)]
