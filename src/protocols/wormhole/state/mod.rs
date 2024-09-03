@@ -12,7 +12,7 @@ pub use wormhole_emitter::WormholeEmitter;
 pub use general_message_config::GeneralMessageConfig; 
 pub use token_sender_config::SenderConfig;
 pub use token_redeemer_config::RedeemerConfig;
-pub use foreign_token_emitter::ForeignTContract;
+pub use foreign_token_emitter::ForeignTokenEmitter;
 
 
 // This approach provides a balance between convenience and control.

@@ -4,7 +4,7 @@ use crate::types::CCIHSResult;
 use crate::utility::error::CCIHSError;
 use crate::wormhole::GeneralMessageConfig;
 use crate::wormhole::WormholeError;
-use crate::protocols::wormhole::state::{ForeignEmitter, WormholeEmitter, Received, ForeignTokenEmitter, RedeemerConfig, SenderConfig};
+use crate::protocols::wormhole::state::{ WormholeEmitter, ForeignTokenEmitter};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
@@ -12,16 +12,50 @@ use anchor_spl::{
 use crate::protocols::wormhole::CrossChainMessage;
 
 
+/// This instruction registers a new foreign contract (from another
+    /// network) and saves the emitter information in a ForeignEmitter account.
+    /// This instruction is owner-only, meaning that only the owner of the
+    /// program (defined in the [Config] account) can add and update foreign
+    /// contracts.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx`     - `RegisterForeignContract` context
+    /// * `chain`   - Wormhole Chain ID
+    /// * `address` - Wormhole Emitter Address
+    pub fn register_foreign_token_emitter(
+        ctx: Context<RegisterForeignTokenEmitter>,
+        chain: u16,
+        address: [u8; 32],
+    ) -> Result<()> {
+        // Foreign emitter cannot share the same Wormhole Chain ID as the
+        // Solana Wormhole program's. And cannot register a zero address.
+        require!(
+            chain > 0 && chain != wormhole::CHAIN_ID_SOLANA && !address.iter().all(|&x| x == 0),
+            WormholeError::InvalidForeignContract,
+        );
+
+        // Save the emitter info into the ForeignEmitter account.
+        let emitter = &mut ctx.accounts.foreign_token_emitter;
+        emitter.chain = chain;
+        emitter.address = address;
+        emitter.token_bridge_foreign_endpoint = ctx.accounts.token_bridge_foreign_endpoint.key();
+
+        // Done.
+    Ok(())
+}
+
+
 #[derive(Accounts)]
 #[instruction(chain: u16)]
-pub struct RegisterForeignContract<'info> {
+pub struct RegisterForeignTokenEmitter<'info> {
     #[account(mut)]
     /// Owner of the program set in the [`SenderConfig`] account. Signer for
     /// creating [`ForeignContract`] account.
     pub owner: Signer<'info>,
 
     #[account(
-        has_one = owner @ HelloTokenError::OwnerOnly,
+        has_one = owner @ WormholeError::OwnerOnly,
         seeds = [SenderConfig::SEED_PREFIX],
         bump
     )]
@@ -33,16 +67,16 @@ pub struct RegisterForeignContract<'info> {
         init_if_needed,
         payer = owner,
         seeds = [
-            ForeignContract::SEED_PREFIX,
+            ForeignTokenEmitter::SEED_PREFIX,
             &chain.to_le_bytes()[..]
         ],
         bump,
-        space = ForeignContract::MAXIMUM_SIZE
+        space = ForeignTokenEmitter::MAXIMUM_SIZE
     )]
-    /// Foreign Contract account. Create this account if an emitter has not been
+    /// Foreign Token Emitter account. Create this account if an emitter has not been
     /// registered yet for this Wormhole chain ID. If there already is a
     /// contract address saved in this account, overwrite it.
-    pub foreign_contract: Box<Account<'info, ForeignContract>>,
+    pub foreign_token_emitter: Box<Account<'info, ForeignTokenEmitter>>,
 
     #[account(
         seeds = [
