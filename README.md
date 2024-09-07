@@ -10,6 +10,7 @@
 CCIHS (Cross-Chain Interoperability Hooks for Solana) is a middleware solution that simplifies and extends cross-chain development on Solana. It offers a unified API for multiple protocols, featuring a flexible hook system for custom logic injection. This architecture enables advanced use cases and optimizes for Solana's high-performance environment, making cross-chain development more accessible and powerful. In an increasingly interconnected blockchain ecosystem, CCIHS serves as a crucial transport network interface, enabling seamless interaction between Solana and other blockchain networks and thereby aims to revolutionize cross-chain communication for Solana-based applications.
 
 ## Problem with Cross chain Communication in Solana
+
 Solana developers face significant challenges when creating applications that need to communicate with other blockchains. The process is complex, time-consuming, and prone to errors, also there is a lack of standardization in cross chain operations, so for instance it is hard to make a Wormhole Solana app interact with a LayerZero Solana app, as there is no unified interface for multiple cross-chain protocols. 
 
 ## Solution CCIHS offers
@@ -32,28 +33,23 @@ CCIHS is built around several key components:
 
 This layered architecture ensures modularity, extensibility, and ease of maintenance. The API Layer interacts with the Core, which in turn coordinates with Hooks, Protocol Adapters, and other components to execute cross-chain operations efficiently.
 
-Key aspects of CCIHS include:
+### Key Features of CCIHS
 
-1. **Protocol Abstraction**: CCIHS provides a unified API that works across different cross-chain protocols. Currently supporting Wormhole, with plans to integrate LayerZero and other protocols, CCIHS allows developers to switch between or combine multiple protocols without significant code changes.
+1. **Protocol Abstraction**: A unified API supporting multiple cross-chain protocols (currently Wormhole, with plans for LayerZero and others), allowing seamless switching between protocols.
 
-2. **Extensible Hook System**: The library's hook system is its standout feature, offering unparalleled flexibility in message processing. Developers can inject custom logic at various stages of the cross-chain communication process, enabling advanced use cases like automatic fee adjustments, message validation, or data transformations.
+2. **Extensible Hook System**: Inject custom logic at various stages of the cross-chain communication process with pre-dispatch, post-dispatch, pre-execution, and post-execution hooks enabling advanced use cases like fee adjustments, message validation, and data transformations. 
 
-3. **Solana Optimization**: Built with Solana's unique capabilities in mind, CCIHS is optimized for high throughput and low latency, ensuring efficient use of Solana's resources when interfacing with cross-chain transport networks.
+3. **Solana Optimization**: Leverages Solana's high-speed, low-cost architecture for efficient cross-chain operations.
 
-4. **Comprehensive Error Handling**: Cross-chain operations involve multiple points of potential failure. CCIHS implements robust error handling and recovery mechanisms, enhancing the reliability of cross-chain applications.
+4. **Comprehensive Error Handling**: Robust error management and recovery mechanisms to enhance the reliability of cross-chain applications.
 
-5. **Developer-Friendly**: With a focus on developer experience, CCIHS offers clear documentation, intuitive APIs, and helpful abstractions that make cross-chain development more accessible.
+5. **Developer-Friendly Design**: Clear documentation, intuitive APIs, and helpful abstractions make cross-chain development more accessible.
 
-6. **Security-First Design**: Recognizing the critical nature of cross-chain communications, CCIHS incorporates multiple layers of security checks and balances to safeguard against common vulnerabilities in transport network interactions.
+6. **Security-First Approach**: Multiple layers of security checks to safeguard against common vulnerabilities in cross-chain interactions.
 
-## Features
+7. **Extensible Architecture**: Easily add support for new chains and protocols as the cross-chain ecosystem evolves.
 
-- **Seamless Cross-Chain Communication**: Easily send and receive messages between Solana and other supported blockchains.
-- **Flexible Hook System**: Customize message processing with pre-dispatch, post-dispatch, pre-execution, and post-execution hooks.
-- **Protocol Abstraction**: Support for multiple cross-chain protocols (currently Wormhole, with plans for LayerZero and more).
-- **Comprehensive Error Handling**: Robust error management for reliable cross-chain operations.
-- **Solana Optimization**: Designed to leverage Solana's high-speed, low-cost architecture.
-- **Extensible Architecture**: Easily add support for new chains and protocols.
+These features combine to create a powerful, flexible, and secure framework for building cross-chain applications on Solana, streamlining the development process and enabling innovative use cases in the cross-chain space.
 
 ## Use Cases
 
