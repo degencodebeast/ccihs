@@ -7,17 +7,32 @@
 
 ## Overview
 
-CCIHS (Cross-Chain Interoperability Hooks for Solana) is a cutting-edge Rust library designed to revolutionize cross-chain communication for Solana-based applications. In an increasingly interconnected blockchain ecosystem, CCIHS serves as a crucial transport network interface, enabling seamless interaction between Solana and other blockchain networks.
+CCIHS (Cross-Chain Interoperability Hooks for Solana) is a middleware solution that simplifies and extends cross-chain development on Solana. It offers a unified API for multiple protocols, featuring a flexible hook system for custom logic injection. This architecture enables advanced use cases and optimizes for Solana's high-performance environment, making cross-chain development more accessible and powerful. In an increasingly interconnected blockchain ecosystem, CCIHS serves as a crucial transport network interface, enabling seamless interaction between Solana and other blockchain networks and thereby aims to revolutionize cross-chain communication for Solana-based applications.
 
-### Problem with Cross chain Communication in Solana
+## Problem with Cross chain Communication in Solana
 Solana developers face significant challenges when creating applications that need to communicate with other blockchains. The process is complex, time-consuming, and prone to errors, also there is a lack of standardization in cross chain operations, so for instance it is hard to make a Wormhole Solana app interact with a LayerZero Solana app, as there is no unified interface for multiple cross-chain protocols. 
 
-### Solution CCIHS offers
+## Solution CCIHS offers
 
- CCIHS is a Rust-based package that serves as a middleware layer for cross-chain development on Solana. At its core, CCIHS provides a robust and flexible framework that abstracts the complexities of cross-chain messaging. It leverages Solana's high-performance architecture while offering a standardized interface for interacting with various cross-chain protocols. This approach not only simplifies development but also future-proofs applications against changes in underlying cross-chain technologies.
+CCIHS is a Rust-based package that serves as a middleware layer for cross-chain development on Solana. At its core, CCIHS provides a robust and flexible framework that abstracts the complexities of cross-chain messaging. It leverages Solana's high-performance architecture while offering a standardized interface for interacting with various cross-chain protocols. This approach not only simplifies development but also future-proofs applications against changes in underlying cross-chain technologies. At the heart of CCIHS is our flexible hook system, which allows developers to inject custom logic at crucial points in the message lifecycle. Whether you need custom validation, logging, or complex transformations, our hook system makes it possible without altering the core code. This architecture enables advanced use cases while optimizing for Solana's high-performance environment.
+
+## Architecture
+
+![Architecture](assets/ccihs-architecture.png)
+
+CCIHS is built around several key components:
+
+- **API Layer**: Provides a unified interface for developers to interact with CCIHS.
+- **Core**: Manages the main cross-chain operations and orchestrates the flow between components.
+- **Hooks**: Offers extensibility points for custom logic at various stages of message processing.
+- **Protocol Adapters**: Abstracts different cross-chain communication protocols, allowing for easy integration of new protocols.
+- **Config**: Handles system configuration and settings management.
+- **Types**: Defines common types and structures used throughout the system.
+- **Utility**: Provides supporting functions and tools used across the library.
+
+This layered architecture ensures modularity, extensibility, and ease of maintenance. The API Layer interacts with the Core, which in turn coordinates with Hooks, Protocol Adapters, and other components to execute cross-chain operations efficiently.
 
 Key aspects of CCIHS include:
-
 1. **Protocol Abstraction**: CCIHS provides a unified API that works across different cross-chain protocols. Currently supporting Wormhole, with plans to integrate LayerZero and other protocols, CCIHS allows developers to switch between or combine multiple protocols without significant code changes.
 
 2. **Extensible Hook System**: The library's hook system is its standout feature, offering unparalleled flexibility in message processing. Developers can inject custom logic at various stages of the cross-chain communication process, enabling advanced use cases like automatic fee adjustments, message validation, or data transformations.
@@ -129,44 +144,67 @@ ccihs = "0.1.0"
 
 ## Quick Start
 
-Here's a simple example of how to use CCIHS to send a cross-chain message:
+Here's a comprehensive example of how to use CCIHS to set up a cross-chain communication system with custom hooks:
 
 ```rust
-use ccihs::{CCIHSConfig, CCIHSAPI, CrossChainMessage, ChainId};
+use ccihs::{
+    CCIHSConfig, CCIHSAPI, CrossChainMessage, ChainId, ProtocolType,
+    hooks::{HookType, ValidationHook, LoggingHook, EncryptionHook},
+};
 
-fn main() {
-    // Initialize CCIHS
-    let config = CCIHSConfig::new(/* configuration parameters */);
-    let ccihs = CCIHSAPI::new(config).expect("Failed to initialize CCIHS");
+fn main() -> CCIHSResult<()> {
+    // Step 1: Initialize CCIHS with a custom configuration
+    let config = CCIHSConfig::new()
+        .with_default_protocol(ProtocolType::Wormhole)
+        .with_supported_chains(vec![ChainId::Solana, ChainId::Ethereum]);
+    let mut ccihs = CCIHSAPI::new(config)?;
 
-    // Create a cross-chain message
-    let message = CrossChainMessage::new(
+    // Step 2: Add custom hooks
+    ccihs.add_hook(HookType::PreDispatch, Box::new(ValidationHook::new(1024))); // Max payload size of 1024 bytes
+    ccihs.add_hook(HookType::PostDispatch, Box::new(LoggingHook::new()));
+    ccihs.add_hook(HookType::PreExecution, Box::new(EncryptionHook::new([0u8; 32]))); // Example encryption key
+
+    // Step 3: Create a cross-chain message
+    let mut message = CrossChainMessage::new(
         ChainId::Solana,
         ChainId::Ethereum,
-        sender_address,
-        recipient_address,
-        payload,
+        "sender_address".to_string(),
+        "recipient_address".to_string(),
+        vec![1, 2, 3, 4], // Example payload
     );
 
-    // Send the message
-    match ccihs.send_message(message) {
+    // Step 4: Send the message
+    match ccihs.send_message(&mut message) {
         Ok(_) => println!("Message sent successfully"),
         Err(e) => eprintln!("Failed to send message: {}", e),
     }
+
+    // Step 5: (Optional) Change the default protocol
+    ccihs.set_default_protocol(ProtocolType::LayerZero)?;
+
+    // Step 6: (Optional) Update configuration
+    let new_config = CCIHSConfig::new()
+        .with_default_protocol(ProtocolType::LayerZero)
+        .with_supported_chains(vec![ChainId::Solana, ChainId::Ethereum, ChainId::Avalanche]);
+    ccihs.update_config(new_config)?;
+
+    Ok(())
 }
 ```
+
+This example demonstrates:
+
+1. Initializing CCIHS with a custom configuration.
+2. Adding custom hooks for validation, logging, and encryption.
+3. Creating and sending a cross-chain message.
+4. Changing the default protocol (e.g., from Wormhole to LayerZero).
+5. Updating the CCIHS configuration.
+
 ## Documentation
 For detailed documentation, please refer to our API docs.
 ## Examples
 Check out the examples directory for more detailed usage examples.
-## Architecture
-CCIHS is built around several key components:
 
-- **Core**: Manages the main cross-chain operations.
-- **Hooks**: Provides extensibility points for custom logic.
-- **Protocols**: Abstracts different cross-chain communication protocols.
-- **Config**: Handles system configuration.
-- **Types**: Defines common types used throughout the system.
 
 ## Contributing
 We welcome contributions to CCIHS! Please see our Contributing Guide for more details.

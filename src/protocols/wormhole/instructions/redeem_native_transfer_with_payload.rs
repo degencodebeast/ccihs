@@ -200,7 +200,7 @@ pub struct RedeemNativeTransferWithPayload<'info> {
             &vaa.emitter_chain().to_le_bytes()[..]
         ],
         bump,
-        constraint = foreign_contract.verify(&vaa) @ HelloTokenError::InvalidForeignContract
+        constraint = foreign_contract.verify(&vaa) @ WormholeError::InvalidForeignContract
     )]
     /// Foreign Contract account. The registered contract specified in this
     /// account must agree with the target address for the Token Bridge's token
@@ -253,7 +253,7 @@ pub struct RedeemNativeTransferWithPayload<'info> {
     pub token_bridge_program: Program<'info, token_bridge::program::TokenBridge>,
 
     #[account(
-        address = config.token_bridge.config @ HelloTokenError::InvalidTokenBridgeConfig
+        address = config.token_bridge.config @ WormholeError::InvalidTokenBridgeConfig
     )]
     /// Token Bridge config. Read-only.
     pub token_bridge_config: Account<'info, token_bridge::Config>,
@@ -265,9 +265,9 @@ pub struct RedeemNativeTransferWithPayload<'info> {
         ],
         bump,
         seeds::program = wormhole_program,
-        constraint = vaa.data().to() == crate::ID || vaa.data().to() == config.key() @ HelloTokenError::InvalidTransferToAddress,
-        constraint = vaa.data().to_chain() == wormhole::CHAIN_ID_SOLANA @ HelloTokenError::InvalidTransferToChain,
-        constraint = vaa.data().token_chain() == wormhole::CHAIN_ID_SOLANA @ HelloTokenError::InvalidTransferTokenChain
+        constraint = vaa.data().to() == crate::ID || vaa.data().to() == config.key() @ WormholeError::InvalidTransferToAddress,
+        constraint = vaa.data().to_chain() == wormhole::CHAIN_ID_SOLANA @ WormholeError::InvalidTransferToChain,
+        constraint = vaa.data().token_chain() == wormhole::CHAIN_ID_SOLANA @ WormholeError::InvalidTransferTokenChain
     )]
     /// Verified Wormhole message account. The Wormhole program verified
     /// signatures and posted the account data here. Read-only.
@@ -280,7 +280,7 @@ pub struct RedeemNativeTransferWithPayload<'info> {
     pub token_bridge_claim: UncheckedAccount<'info>,
 
     #[account(
-        address = foreign_contract.token_bridge_foreign_endpoint @ HelloTokenError::InvalidTokenBridgeForeignEndpoint
+        address = foreign_contract.token_bridge_foreign_endpoint @ WormholeError::InvalidTokenBridgeForeignEndpoint
     )]
     /// Token Bridge foreign endpoint. This account should really be one
     /// endpoint per chain, but the PDA allows for multiple endpoints for each
@@ -298,7 +298,7 @@ pub struct RedeemNativeTransferWithPayload<'info> {
     pub token_bridge_custody: Account<'info, TokenAccount>,
 
     #[account(
-        address = config.token_bridge.custody_signer @ HelloTokenError::InvalidTokenBridgeCustodySigner
+        address = config.token_bridge.custody_signer @ WormholeError::InvalidTokenBridgeCustodySigner
     )]
     /// CHECK: Token Bridge custody signer. Read-only.
     pub token_bridge_custody_signer: UncheckedAccount<'info>,
