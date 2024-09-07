@@ -33,6 +33,7 @@ CCIHS is built around several key components:
 This layered architecture ensures modularity, extensibility, and ease of maintenance. The API Layer interacts with the Core, which in turn coordinates with Hooks, Protocol Adapters, and other components to execute cross-chain operations efficiently.
 
 Key aspects of CCIHS include:
+
 1. **Protocol Abstraction**: CCIHS provides a unified API that works across different cross-chain protocols. Currently supporting Wormhole, with plans to integrate LayerZero and other protocols, CCIHS allows developers to switch between or combine multiple protocols without significant code changes.
 
 2. **Extensible Hook System**: The library's hook system is its standout feature, offering unparalleled flexibility in message processing. Developers can inject custom logic at various stages of the cross-chain communication process, enabling advanced use cases like automatic fee adjustments, message validation, or data transformations.
