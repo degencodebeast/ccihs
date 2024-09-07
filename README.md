@@ -197,12 +197,12 @@ This example demonstrates:
 4. Changing the default protocol (e.g., from Wormhole to LayerZero).
 5. Updating the CCIHS configuration.
 
-## Documentation
+<!-- ## Documentation
 For detailed documentation, please refer to our API docs.
 ## Examples
-Check out the examples directory for more detailed usage examples.
+Check out the examples directory for more detailed usage examples. -->
 
-
+<!-- 
 ## Contributing
 We welcome contributions to CCIHS! Please see our Contributing Guide for more details.
 ## Testing
@@ -214,7 +214,7 @@ cargo test
 To run benchmarks:
 ```bash
 cargo bench
-```
+``` -->
 ## Security
 Security is of utmost importance in cross-chain communication. If you discover any security issues, please report them via our Security Policy.
 ## License
