@@ -7,7 +7,9 @@
 
 ## Overview
 
-CCIHS (Cross-Chain Interoperability Hooks for Solana) is a middleware solution that simplifies and extends cross-chain development on Solana. It offers a unified API for multiple protocols, featuring a flexible hook system for custom logic injection. This architecture enables advanced use cases and optimizes for Solana's high-performance environment, making cross-chain development more accessible and powerful. In an increasingly interconnected blockchain ecosystem, CCIHS serves as a crucial transport network interface, enabling seamless interaction between Solana and other blockchain networks and thereby aims to revolutionize cross-chain communication for Solana-based applications.
+CCIHS (Cross-Chain Interoperability Hooks for Solana) is a middleware solution that simplifies and extends cross-chain development on Solana. It offers a unified API for multiple protocols, featuring a flexible hook system for custom logic injection. This architecture enables advanced use cases and optimizes for Solana's high-performance environment, making cross-chain development more accessible and powerful.
+
+In an increasingly interconnected blockchain ecosystem, CCIHS serves as a crucial transport network interface, enabling seamless interaction between Solana and other blockchain networks and thereby aims to revolutionize cross-chain communication for Solana-based applications.
 
 ## Problem with Cross chain Communication in Solana
 
@@ -33,6 +35,32 @@ CCIHS is built around several key components:
 
 This layered architecture ensures modularity, extensibility, and ease of maintenance. The API Layer interacts with the Core, which in turn coordinates with Hooks, Protocol Adapters, and other components to execute cross-chain operations efficiently.
 
+## How It Works
+
+CCIHS operates through a series of interconnected components that work together to facilitate cross-chain communication:
+
+1. **Initialization**: The process begins with initializing CCIHS using a custom configuration. This sets up the supported chains and default protocol.
+
+2. **Message Creation**: Users create a `CrossChainMessage` object, specifying the source chain, destination chain, sender, recipient, and payload.
+
+3. **Hook System**: Before message dispatch, CCIHS executes pre-dispatch hooks. These can include custom validation, encryption, or other operations.
+
+4. **Protocol Abstraction**: CCIHS uses the configured protocol adapter (e.g., Wormhole) to send the message. This abstraction allows for easy switching between different cross-chain protocols.
+
+5. **Message Dispatch**: The message is sent through the chosen protocol to the destination chain.
+
+6. **Post-Dispatch Processing**: After dispatch, post-dispatch hooks are executed, which can include logging or other custom operations.
+
+7. **Message Reception**: On the receiving end, CCIHS listens for incoming messages from the specified source chain.
+
+8. **Pre-Execution Hooks**: Before processing the received message, pre-execution hooks are run. These can include decryption or validation operations.
+
+9. **Message Execution**: The received message is processed according to the application's logic.
+
+10. **Post-Execution Hooks**: Finally, post-execution hooks are run, which can include logging or triggering subsequent operations.
+
+This flow allows for a high degree of customization and extensibility at each stage of the cross-chain communication process, while maintaining a consistent and easy-to-use interface for developers.
+
 ### Key Features of CCIHS
 
 1. **Protocol Abstraction**: A unified API supporting multiple cross-chain protocols (currently Wormhole, with plans for LayerZero and others), allowing seamless switching between protocols.
@@ -50,6 +78,8 @@ This layered architecture ensures modularity, extensibility, and ease of mainten
 7. **Extensible Architecture**: Easily add support for new chains and protocols as the cross-chain ecosystem evolves.
 
 These features combine to create a powerful, flexible, and secure framework for building cross-chain applications on Solana, streamlining the development process and enabling innovative use cases in the cross-chain space.
+
+<!-- For a code example of this flow, see the Quick Start section above. -->
 
 ## Use Cases
 
