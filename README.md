@@ -146,7 +146,7 @@ Here's a comprehensive example of how to use CCIHS to set up a cross-chain commu
 ```rust
 use ccihs::{
     CCIHSConfig, CCIHSAPI, CrossChainMessage, ChainId, ProtocolType,
-    hooks::{HookType, ValidationHook, LoggingHook, EncryptionHook},
+    hooks::{HookType, ValidationHook, LoggingHook, EncryptionHook, DecryptionHook},
 };
 
 fn main() -> CCIHSResult<()> {
@@ -161,7 +161,7 @@ fn main() -> CCIHSResult<()> {
     ccihs.add_hook(HookType::PostDispatch, Box::new(LoggingHook::new()));
 
     // Add custom hooks for receiving
-    ccihs.add_hook(HookType::PreExecution, Box::new(EncryptionHook::new([0u8; 32])));
+    ccihs.add_hook(HookType::PreExecution, Box::new(DecryptionHook::new([0u8; 32])));
     ccihs.add_hook(HookType::PostExecution, Box::new(LoggingHook::new()));
 
     // Create and send a cross-chain message
@@ -177,7 +177,17 @@ fn main() -> CCIHSResult<()> {
     // Receive a cross-chain message
     let received_message = ccihs.receive_message(ChainId::Ethereum)?;
 
+    // Process the received message
+    process_message(received_message);
+
     Ok(())
+}
+
+fn process_message(message: CrossChainMessage) {
+    // Custom logic to handle the received message
+    println!("Received message from: {}", message.sender);
+    println!("Message payload: {:?}", message.payload);
+    // ... more processing ...
 }
 ```
 
@@ -187,6 +197,7 @@ This example demonstrates:
 2. Adding custom hooks for sending and receiving messages.
 3. Creating and sending a cross-chain message.
 4. Receiving a cross-chain message.
+5. Processing the received message with custom logic.
 
 <!-- ## Documentation
 For detailed documentation, please refer to our API docs.
