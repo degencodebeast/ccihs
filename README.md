@@ -150,18 +150,21 @@ use ccihs::{
 };
 
 fn main() -> CCIHSResult<()> {
-    // Step 1: Initialize CCIHS with a custom configuration
+    // Initialize CCIHS
     let config = CCIHSConfig::new()
         .with_default_protocol(ProtocolType::Wormhole)
         .with_supported_chains(vec![ChainId::Solana, ChainId::Ethereum]);
     let mut ccihs = CCIHSAPI::new(config)?;
 
-    // Step 2: Add custom hooks
-    ccihs.add_hook(HookType::PreDispatch, Box::new(ValidationHook::new(1024))); // Max payload size of 1024 bytes
+    // Add custom hooks for sending
+    ccihs.add_hook(HookType::PreDispatch, Box::new(ValidationHook::new(1024)));
     ccihs.add_hook(HookType::PostDispatch, Box::new(LoggingHook::new()));
-    ccihs.add_hook(HookType::PreExecution, Box::new(EncryptionHook::new([0u8; 32]))); // Example encryption key
 
-    // Step 3: Create a cross-chain message
+    // Add custom hooks for receiving
+    ccihs.add_hook(HookType::PreExecution, Box::new(EncryptionHook::new([0u8; 32])));
+    ccihs.add_hook(HookType::PostExecution, Box::new(LoggingHook::new()));
+
+    // Create and send a cross-chain message
     let mut message = CrossChainMessage::new(
         ChainId::Solana,
         ChainId::Ethereum,
@@ -169,21 +172,10 @@ fn main() -> CCIHSResult<()> {
         "recipient_address".to_string(),
         vec![1, 2, 3, 4], // Example payload
     );
+    ccihs.send_message(&mut message)?;
 
-    // Step 4: Send the message
-    match ccihs.send_message(&mut message) {
-        Ok(_) => println!("Message sent successfully"),
-        Err(e) => eprintln!("Failed to send message: {}", e),
-    }
-
-    // Step 5: (Optional) Change the default protocol
-    ccihs.set_default_protocol(ProtocolType::LayerZero)?;
-
-    // Step 6: (Optional) Update configuration
-    let new_config = CCIHSConfig::new()
-        .with_default_protocol(ProtocolType::LayerZero)
-        .with_supported_chains(vec![ChainId::Solana, ChainId::Ethereum, ChainId::Avalanche]);
-    ccihs.update_config(new_config)?;
+    // Receive a cross-chain message
+    let received_message = ccihs.receive_message(ChainId::Ethereum)?;
 
     Ok(())
 }
@@ -192,10 +184,9 @@ fn main() -> CCIHSResult<()> {
 This example demonstrates:
 
 1. Initializing CCIHS with a custom configuration.
-2. Adding custom hooks for validation, logging, and encryption.
+2. Adding custom hooks for sending and receiving messages.
 3. Creating and sending a cross-chain message.
-4. Changing the default protocol (e.g., from Wormhole to LayerZero).
-5. Updating the CCIHS configuration.
+4. Receiving a cross-chain message.
 
 <!-- ## Documentation
 For detailed documentation, please refer to our API docs.
