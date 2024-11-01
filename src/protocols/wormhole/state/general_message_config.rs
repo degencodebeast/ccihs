@@ -3,7 +3,11 @@ use crate::config::protocol_config::ProtocolConfigTrait;
 use crate::types::{ChainId, ProtocolType};
 use std::collections::{HashSet, HashMap};
 use std::collections::BTreeMap;
+use borsh::{BorshSerialize, BorshDeserialize};
 
+pub const SEED_PREFIX_SENT: &[u8] = b"sent";
+
+#[derive(BorshSerialize, BorshDeserialize, Clone)]
 pub struct WormholeAddresses {
     pub bridge: Pubkey,
     pub fee_collector: Pubkey,
@@ -18,9 +22,10 @@ impl WormholeAddresses {
     ;
 }
 
-#[account]
-//#[derive(Default)]
-#[derive(Default, AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+// #[account]
+// //#[derive(Default)]
+// #[derive(Default, AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct GeneralMessageConfig {
     /// Program's owner.
     pub owner: Pubkey,

@@ -9,11 +9,12 @@ mod foreign_token_emitter;
 pub use foreign_emitter::ForeignEmitter;
 pub use received::{Received, MESSAGE_MAX_LENGTH};
 pub use wormhole_emitter::WormholeEmitter;
-pub use general_message_config::GeneralMessageConfig; 
-pub use token_sender_config::SenderConfig;
-pub use token_redeemer_config::RedeemerConfig;
+pub use general_message_config::{GeneralMessageConfig, WormholeAddresses, SEED_PREFIX_SENT};
+pub use token_sender_config::{SenderConfig, OutboundTokenBridgeAddresses};
+pub use token_redeemer_config::{RedeemerConfig, InboundTokenBridgeAddresses};
 pub use foreign_token_emitter::ForeignTokenEmitter;
 
+//rename the state folder to accounts later
 
 // This approach provides a balance between convenience and control.
 // We explicitly re-export the main structs and important constants,
